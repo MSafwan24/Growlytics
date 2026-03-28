@@ -1,12 +1,11 @@
-# 🌿 Growlytics: AI-Powered Smart Farming
+# 🌿 Growlytics: AI-Powered Smart Farming (Just a design)
 
-Growlytics is a comprehensive agricultural solution designed to empower farmers with AI-driven insights. From identifying crop diseases to providing personalized "Eco Prescriptions," Growlytics bridges the gap between technology and traditional farming.
+Growlytics is a comprehensive agricultural solution designed to empower small gardeners and joy gardener with AI-driven insights. From identifying crop diseases to providing personalized "Eco Prescriptions," Growlytics bridges the gap between technology and traditional gardening.
 
 ## 🚀 Features
 * **AI Vision Scout:** Real-time leaf disease detection using computer vision.
 * **Eco Prescription:** Personalized treatment plans and soil recovery advice.
 * **Smart Dashboard:** Live weather updates and quick-action navigation.
-* **Plant Doctor Library:** A history of past diagnoses for easy farm management.
 
 ## 🛠️ Tech Stack
 * **Framework:** Flutter (Multi-platform)
@@ -23,3 +22,15 @@ Growlytics is a comprehensive agricultural solution designed to empower farmers 
 1. Clone the repository:
    ```bash
    git clone [https://github.com/MSafwan24/Growlytics.git](https://github.com/MSafwan24/Growlytics.git)
+
+2. Navigate project folder:
+   ```bash
+   cd growlytics
+
+3. Install dependencies:
+   ```bash
+   flutter pub get
+
+4. Run application :
+   ```bash
+   flutter run
