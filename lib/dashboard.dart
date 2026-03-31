@@ -22,6 +22,7 @@ class _DashboardPageState extends State<DashboardPage> {
   LocationResult? _location;
   double? _soilMoisturePct;
   CropType _selectedCropType = CropType.generic;
+  GrowthStage _selectedGrowthStage = GrowthStage.vegetative;
   bool _weatherCardHovered = false;
 
   @override
@@ -276,6 +277,141 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
+  Future<void> _changeGrowthStage() async {
+    final result = await showDialog<GrowthStage>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select growth stage'),
+          content: SizedBox(
+            width: 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: GrowthStage.values
+                  .map(
+                    (stage) => ListTile(
+                      leading: Icon(
+                        stage == _selectedGrowthStage
+                            ? Icons.check_circle
+                            : Icons.circle_outlined,
+                        color: stage == _selectedGrowthStage
+                            ? Colors.green.shade700
+                            : Colors.grey,
+                      ),
+                      title: Text(stage.label),
+                      subtitle: Text(
+                        'Water demand: ${(stage.waterDemandMultiplier * 100).toStringAsFixed(0)}% of baseline',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      onTap: () => Navigator.of(context).pop(stage),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedGrowthStage = result;
+      _weatherFuture = _loadWeather(customLocation: _location);
+    });
+  }
+
+  Widget _buildIrrigationGauge({
+    required double needScore,
+    required double et0Mm,
+    required double confidence,
+    required double liters,
+    required String timing,
+    required CropType cropType,
+    required GrowthStage growthStage,
+  }) {
+    // Convert 0-1 score to gauge display
+    final gaugeValue = needScore;
+    final gaugeColor = gaugeValue >= 0.7
+        ? Colors.red
+        : gaugeValue >= 0.45
+            ? Colors.orange
+            : Colors.green;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: gaugeColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: gaugeColor.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Irrigation Need Gauge',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: gaugeColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    minHeight: 20,
+                    value: gaugeValue,
+                    backgroundColor: Colors.grey.shade300,
+                    valueColor: AlwaysStoppedAnimation<Color>(gaugeColor),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${(gaugeValue * 100).toStringAsFixed(0)}%',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: gaugeColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            gaugeValue >= 0.7
+                ? 'High irrigation need - water today'
+                : gaugeValue >= 0.45
+                    ? 'Moderate irrigation need - water soon'
+                    : 'Low irrigation need - skip for now',
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfidenceStars(double confidence) {
+    // Convert 0-1 confidence to 1-5 stars
+    final stars = (confidence * 5).round().clamp(1, 5);
+    return Row(
+      children: List.generate(
+        5,
+        (index) => Icon(
+          index < stars ? Icons.star : Icons.star_border,
+          color: Colors.amber.shade600,
+          size: 18,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -435,6 +571,7 @@ class _DashboardPageState extends State<DashboardPage> {
               weather: weather,
               aiHydrationService: _aiHydrationService,
               cropType: _selectedCropType,
+              growthStage: _selectedGrowthStage,
               weatherIconForCode: _weatherIconForCode,
             ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -536,6 +673,7 @@ class _DashboardPageState extends State<DashboardPage> {
               final aiInsight = _aiHydrationService.analyzeCurrent(
                 weather: weather,
                 cropType: _selectedCropType,
+                growthStage: _selectedGrowthStage,
               );
               final statusColor = _statusColor(aiInsight.recommendedLevel);
               return InkWell(
@@ -626,6 +764,16 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
+                    _buildIrrigationGauge(
+                      needScore: aiInsight.needScore,
+                      et0Mm: aiInsight.et0Mm,
+                      confidence: aiInsight.confidence,
+                      liters: aiInsight.litersPerSquareMeter,
+                      timing: aiInsight.timingWindow,
+                      cropType: _selectedCropType,
+                      growthStage: _selectedGrowthStage,
+                    ),
+                    const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
@@ -639,16 +787,36 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'AI confidence ${(aiInsight.confidence * 100).toStringAsFixed(0)}% - ${_selectedCropType.label}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${_selectedCropType.label} - ${_selectedGrowthStage.label}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'ET0: ${aiInsight.et0Mm.toStringAsFixed(1)} mm/day',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              _buildConfidenceStars(aiInsight.confidence),
+                            ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 8),
                           Text(
-                            'Suggested water ${aiInsight.litersPerSquareMeter.toStringAsFixed(1)} L/m2 - Best time ${aiInsight.timingWindow}',
+                            'Suggested water ${aiInsight.litersPerSquareMeter.toStringAsFixed(1)} L/m² - Best time ${aiInsight.timingWindow}',
                             style: const TextStyle(fontSize: 14),
                           ),
                           const SizedBox(height: 4),
@@ -686,6 +854,11 @@ class _DashboardPageState extends State<DashboardPage> {
                           onPressed: _changeCropType,
                           icon: const Icon(Icons.grass),
                           label: const Text('Crop type'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _changeGrowthStage,
+                          icon: const Icon(Icons.eco),
+                          label: const Text('Growth stage'),
                         ),
                         OutlinedButton.icon(
                           onPressed: _setSoilMoisture,
@@ -1277,12 +1450,14 @@ class _WeeklyForecastPage extends StatefulWidget {
     required this.weather,
     required this.aiHydrationService,
     required this.cropType,
+    required this.growthStage,
     required this.weatherIconForCode,
   });
 
   final SmartHydrationWeather weather;
   final AiHydrationService aiHydrationService;
   final CropType cropType;
+  final GrowthStage growthStage;
   final IconData Function(int weatherCode) weatherIconForCode;
 
   @override
@@ -1375,6 +1550,7 @@ class _WeeklyForecastPageState extends State<_WeeklyForecastPage> {
               recommendation: widget.aiHydrationService.recommendationForDay(
                 day: widget.weather.dailyForecast[i],
                 cropType: widget.cropType,
+                growthStage: widget.growthStage,
               ),
               weatherIconForCode: widget.weatherIconForCode,
               visible: _visibleCards > i,
