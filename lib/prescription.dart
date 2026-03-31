@@ -57,7 +57,7 @@ class EcoPrescriptionPage extends StatelessWidget{
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(Icons.spa, color: color)),
+        leading: CircleAvatar(backgroundColor: color.withValues(alpha: 0.1), child: Icon(Icons.spa, color: color)),
         title: Text(plant, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(disease),
         trailing: IconButton(
