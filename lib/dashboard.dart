@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:growlytics/main.dart';
+import 'package:growlytics/services/ai_hydration_service.dart';
 import 'package:growlytics/services/location_service.dart';
 import 'package:growlytics/services/weather_service.dart';
 
@@ -16,9 +17,11 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final WeatherService _weatherService = WeatherService();
   final LocationService _locationService = LocationService();
+  final AiHydrationService _aiHydrationService = AiHydrationService();
   late Future<SmartHydrationWeather> _weatherFuture;
   LocationResult? _location;
   double? _soilMoisturePct;
+  CropType _selectedCropType = CropType.generic;
   bool _weatherCardHovered = false;
 
   @override
@@ -50,17 +53,76 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _changeLocationManually() async {
-    final controller = TextEditingController();
-    final query = await showDialog<String>(
+    final malaysiaLocationsByState = _locationService.malaysiaLocationsByState;
+    final states = malaysiaLocationsByState.keys.toList()..sort();
+
+    var selectedState = _initialStateSelection(states);
+    var selectedLocation =
+        malaysiaLocationsByState[selectedState]!.first;
+
+    final result = await showDialog<_MalaysiaLocationSelection>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Set your location'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(hintText: 'City or village name'),
-            textInputAction: TextInputAction.search,
-            onSubmitted: (value) => Navigator.of(context).pop(value),
+          title: const Text('Select location in Malaysia'),
+          content: StatefulBuilder(
+            builder: (context, setDialogState) {
+              final locations = malaysiaLocationsByState[selectedState]!;
+              if (!locations.contains(selectedLocation)) {
+                selectedLocation = locations.first;
+              }
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedState,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'State'),
+                    items: states
+                        .map(
+                          (state) => DropdownMenuItem<String>(
+                            value: state,
+                            child: Text(state),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      setDialogState(() {
+                        selectedState = value;
+                        selectedLocation =
+                            malaysiaLocationsByState[value]!.first;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedLocation,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Location'),
+                    items: locations
+                        .map(
+                          (location) => DropdownMenuItem<String>(
+                            value: location,
+                            child: Text(location),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      setDialogState(() {
+                        selectedLocation = value;
+                      });
+                    },
+                  ),
+                ],
+              );
+            },
           ),
           actions: [
             TextButton(
@@ -68,33 +130,57 @@ class _DashboardPageState extends State<DashboardPage> {
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Apply'),
+              onPressed: () {
+                Navigator.of(context).pop(
+                  _MalaysiaLocationSelection(
+                    state: selectedState,
+                    location: selectedLocation,
+                  ),
+                );
+              },
+              child: const Text('Use location'),
             ),
           ],
         );
       },
     );
 
-    if (!mounted || query == null || query.trim().isEmpty) {
+    if (!mounted || result == null) {
       return;
     }
 
-    final result = await _locationService.searchLocationByName(query.trim());
+    final matched = await _locationService.searchMalaysiaLocation(
+      state: result.state,
+      location: result.location,
+    );
     if (!mounted) {
       return;
     }
-    if (result == null) {
+    if (matched == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Location not found. Try another name.')),
+        const SnackBar(content: Text('Location not found. Please try again.')),
       );
       return;
     }
 
     setState(() {
-      _location = result;
-      _weatherFuture = _loadWeather(customLocation: result);
+      _location = matched;
+      _weatherFuture = _loadWeather(customLocation: matched);
     });
+  }
+
+  String _initialStateSelection(List<String> states) {
+    if (_location == null) {
+      return states.contains('Kuala Lumpur') ? 'Kuala Lumpur' : states.first;
+    }
+
+    final region = _location!.region.toLowerCase();
+    for (final state in states) {
+      if (region.contains(state.toLowerCase())) {
+        return state;
+      }
+    }
+    return states.contains('Kuala Lumpur') ? 'Kuala Lumpur' : states.first;
   }
 
   Future<void> _setSoilMoisture() async {
@@ -146,6 +232,48 @@ class _DashboardPageState extends State<DashboardPage> {
         _weatherFuture = _loadWeather(customLocation: _location);
       });
     }
+  }
+
+  Future<void> _changeCropType() async {
+    final result = await showDialog<CropType>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select crop profile'),
+          content: SizedBox(
+            width: 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: CropType.values
+                  .map(
+                    (crop) => ListTile(
+                      leading: Icon(
+                        crop == _selectedCropType
+                            ? Icons.check_circle
+                            : Icons.circle_outlined,
+                        color: crop == _selectedCropType
+                            ? Colors.green.shade700
+                            : Colors.grey,
+                      ),
+                      title: Text(crop.label),
+                      onTap: () => Navigator.of(context).pop(crop),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedCropType = result;
+      _weatherFuture = _loadWeather(customLocation: _location);
+    });
   }
 
   @override
@@ -305,6 +433,8 @@ class _DashboardPageState extends State<DashboardPage> {
         pageBuilder: (context, animation, secondaryAnimation) =>
             _WeeklyForecastPage(
               weather: weather,
+              aiHydrationService: _aiHydrationService,
+              cropType: _selectedCropType,
               weatherIconForCode: _weatherIconForCode,
             ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -403,7 +533,11 @@ class _DashboardPageState extends State<DashboardPage> {
               }
 
               final weather = snapshot.data!;
-              final statusColor = _statusColor(weather.irrigationLevel);
+              final aiInsight = _aiHydrationService.analyzeCurrent(
+                weather: weather,
+                cropType: _selectedCropType,
+              );
+              final statusColor = _statusColor(aiInsight.recommendedLevel);
               return InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: () => _openWeeklyDashboard(weather),
@@ -482,11 +616,50 @@ class _DashboardPageState extends State<DashboardPage> {
                         );
                       },
                       child: _RecommendationBadge(
-                        key: ValueKey<String>(weather.irrigationDecision),
+                        key: ValueKey<String>(
+                          '${aiInsight.primaryMessage}:${aiInsight.confidence.toStringAsFixed(2)}',
+                        ),
                         statusColor: statusColor,
                         text:
-                            '${_statusEmoji(weather.irrigationLevel)} Recommendation: ${weather.irrigationDecision}',
+                            '${_statusEmoji(aiInsight.recommendedLevel)} ${aiInsight.primaryMessage}',
                         reduceMotion: reduceMotion,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.blueGrey.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AI confidence ${(aiInsight.confidence * 100).toStringAsFixed(0)}% - ${_selectedCropType.label}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Suggested water ${aiInsight.litersPerSquareMeter.toStringAsFixed(1)} L/m2 - Best time ${aiInsight.timingWindow}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            aiInsight.reasons.join(' '),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -508,6 +681,11 @@ class _DashboardPageState extends State<DashboardPage> {
                           onPressed: _changeLocationManually,
                           icon: const Icon(Icons.edit_location_alt),
                           label: const Text('Change location'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _changeCropType,
+                          icon: const Icon(Icons.grass),
+                          label: const Text('Crop type'),
                         ),
                         OutlinedButton.icon(
                           onPressed: _setSoilMoisture,
@@ -590,6 +768,13 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
+}
+
+class _MalaysiaLocationSelection {
+  const _MalaysiaLocationSelection({required this.state, required this.location});
+
+  final String state;
+  final String location;
 }
 
 class _RecommendationBadge extends StatefulWidget {
@@ -1090,10 +1275,14 @@ class _MiniRainPainter extends CustomPainter {
 class _WeeklyForecastPage extends StatefulWidget {
   const _WeeklyForecastPage({
     required this.weather,
+    required this.aiHydrationService,
+    required this.cropType,
     required this.weatherIconForCode,
   });
 
   final SmartHydrationWeather weather;
+  final AiHydrationService aiHydrationService;
+  final CropType cropType;
   final IconData Function(int weatherCode) weatherIconForCode;
 
   @override
@@ -1183,8 +1372,9 @@ class _WeeklyForecastPageState extends State<_WeeklyForecastPage> {
             _AnimatedForecastTile(
               day: widget.weather.dailyForecast[i],
               color: _dayColor(widget.weather.dailyForecast[i]),
-              recommendation: widget.weather.recommendationForDay(
-                widget.weather.dailyForecast[i],
+              recommendation: widget.aiHydrationService.recommendationForDay(
+                day: widget.weather.dailyForecast[i],
+                cropType: widget.cropType,
               ),
               weatherIconForCode: widget.weatherIconForCode,
               visible: _visibleCards > i,
