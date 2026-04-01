@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:growlytics/models/hydration_record.dart';
 import 'package:growlytics/services/weather_service.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HydrationHistoryService {
   static final HydrationHistoryService _instance = HydrationHistoryService._internal();
+  static const String _fallbackStorageKey = 'hydration_records_fallback';
   
   factory HydrationHistoryService() {
     return _instance;
@@ -58,52 +62,120 @@ class HydrationHistoryService {
   
   /// Save a new hydration record
   Future<int> saveRecord(HydrationRecord record) async {
-    final db = await database;
-    return db.insert('hydration_records', record.toMap());
+    try {
+      final db = await database;
+      return db.insert('hydration_records', record.toMap());
+    } catch (_) {
+      final records = await _readFallbackRecords();
+      records.add(record);
+      await _writeFallbackRecords(records);
+      return records.length;
+    }
   }
   
   /// Update an existing record with farmer feedback
   Future<void> updateRecord(HydrationRecord record) async {
-    final db = await database;
-    await db.update(
-      'hydration_records',
-      record.toMap(),
-      where: 'timestamp = ?',
-      whereArgs: [record.timestamp.toIso8601String()],
-    );
+    try {
+      final db = await database;
+      await db.update(
+        'hydration_records',
+        record.toMap(),
+        where: 'timestamp = ?',
+        whereArgs: [record.timestamp.toIso8601String()],
+      );
+    } catch (_) {
+      final records = await _readFallbackRecords();
+      final index = records.indexWhere(
+        (r) => r.timestamp.toIso8601String() == record.timestamp.toIso8601String(),
+      );
+      if (index >= 0) {
+        records[index] = record;
+      } else {
+        records.add(record);
+      }
+      await _writeFallbackRecords(records);
+    }
   }
   
   /// Get all records
   Future<List<HydrationRecord>> getAllRecords() async {
-    final db = await database;
-    final maps = await db.query('hydration_records', orderBy: 'timestamp DESC');
-    return [for (final map in maps) HydrationRecord.fromMap(map)];
+    try {
+      final db = await database;
+      final maps = await db.query('hydration_records', orderBy: 'timestamp DESC');
+      return [for (final map in maps) HydrationRecord.fromMap(map)];
+    } catch (_) {
+      final fallback = await _readFallbackRecords();
+      fallback.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return fallback;
+    }
   }
   
   /// Get recent records (last N days)
   Future<List<HydrationRecord>> getRecentRecords({int days = 30}) async {
-    final db = await database;
     final cutoffDate = DateTime.now().subtract(Duration(days: days));
-    
-    final maps = await db.query(
-      'hydration_records',
-      where: 'timestamp > ?',
-      whereArgs: [cutoffDate.toIso8601String()],
-      orderBy: 'timestamp DESC',
-    );
-    return [for (final map in maps) HydrationRecord.fromMap(map)];
+
+    try {
+      final db = await database;
+      final maps = await db.query(
+        'hydration_records',
+        where: 'timestamp > ?',
+        whereArgs: [cutoffDate.toIso8601String()],
+        orderBy: 'timestamp DESC',
+      );
+      return [for (final map in maps) HydrationRecord.fromMap(map)];
+    } catch (_) {
+      final fallback = await _readFallbackRecords();
+      final filtered = fallback
+          .where((record) => record.timestamp.isAfter(cutoffDate))
+          .toList();
+      filtered.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return filtered;
+    }
   }
   
   /// Get records for a specific location
   Future<List<HydrationRecord>> getRecordsForLocation(String location) async {
-    final db = await database;
-    final maps = await db.query(
-      'hydration_records',
-      where: 'location = ?',
-      whereArgs: [location],
-      orderBy: 'timestamp DESC',
-    );
-    return [for (final map in maps) HydrationRecord.fromMap(map)];
+    try {
+      final db = await database;
+      final maps = await db.query(
+        'hydration_records',
+        where: 'location = ?',
+        whereArgs: [location],
+        orderBy: 'timestamp DESC',
+      );
+      return [for (final map in maps) HydrationRecord.fromMap(map)];
+    } catch (_) {
+      final fallback = await _readFallbackRecords();
+      final filtered = fallback.where((record) => record.location == location).toList();
+      filtered.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return filtered;
+    }
+  }
+
+  Future<List<HydrationRecord>> _readFallbackRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_fallbackStorageKey);
+    if (raw == null || raw.isEmpty) {
+      return <HydrationRecord>[];
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) {
+        return <HydrationRecord>[];
+      }
+      return decoded
+          .whereType<Map>()
+          .map((item) => HydrationRecord.fromMap(Map<String, dynamic>.from(item)))
+          .toList();
+    } catch (_) {
+      return <HydrationRecord>[];
+    }
+  }
+
+  Future<void> _writeFallbackRecords(List<HydrationRecord> records) async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = jsonEncode([for (final record in records) record.toMap()]);
+    await prefs.setString(_fallbackStorageKey, encoded);
   }
   
   /// Calculate performance statistics
@@ -124,12 +196,15 @@ class HydrationHistoryService {
     final recordsWithFeedback = allRecords.where((r) => r.farmerFollowedRecommendation != null).toList();
     final followedRecords = recordsWithFeedback.where((r) => r.farmerFollowedRecommendation == true).toList();
     
-    // Calculate water saved (when farmer skipped unnecessary watering)
+    // Calculate water saved from followed smart actions.
     double waterSaved = 0;
     for (final record in allRecords) {
-      if (record.farmerFollowedRecommendation == false && 
+      if (record.farmerFollowedRecommendation == true &&
           record.recommendedLevel == IrrigationLevel.skip) {
         waterSaved += record.recommendedLitersPerM2 * 100; // Assume 100m²
+      } else if (record.farmerFollowedRecommendation == true &&
+          record.recommendedLevel == IrrigationLevel.waterLightly) {
+        waterSaved += (record.recommendedLitersPerM2 * 100) * 0.35;
       }
     }
     
