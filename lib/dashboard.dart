@@ -6,6 +6,8 @@ import 'package:growlytics/main.dart';
 import 'package:growlytics/services/ai_hydration_service.dart';
 import 'package:growlytics/services/location_service.dart';
 import 'package:growlytics/services/weather_service.dart';
+import 'package:growlytics/models/hydration_record.dart';
+import 'package:growlytics/services/hydration_history_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -18,11 +20,13 @@ class _DashboardPageState extends State<DashboardPage> {
   final WeatherService _weatherService = WeatherService();
   final LocationService _locationService = LocationService();
   final AiHydrationService _aiHydrationService = AiHydrationService();
+    final HydrationHistoryService _historyService = HydrationHistoryService();
   late Future<SmartHydrationWeather> _weatherFuture;
   LocationResult? _location;
   double? _soilMoisturePct;
   CropType _selectedCropType = CropType.generic;
   GrowthStage _selectedGrowthStage = GrowthStage.vegetative;
+    SoilType _selectedSoilType = SoilType.loam;
   bool _weatherCardHovered = false;
 
   @override
@@ -323,6 +327,59 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
+  Future<void> _changeSoilType() async {
+    final result = await showDialog<SoilType>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Select soil type'),
+          content: SizedBox(
+            width: 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: SoilType.values
+                  .map(
+                    (soil) => ListTile(
+                      leading: Icon(
+                        soil == _selectedSoilType
+                            ? Icons.check_circle
+                            : Icons.circle_outlined,
+                        color: soil == _selectedSoilType ? Colors.green.shade700 : Colors.grey,
+                      ),
+                      title: Text(soil.label),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Water holding: ${(soil.waterHoldingCapacityFactor * 100).toStringAsFixed(0)}% of loam',
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          Text(
+                            'Frequency: ${(soil.frequencyMultiplier).toStringAsFixed(1)}x baseline',
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ],
+                      ),
+                      onTap: () => Navigator.of(context).pop(soil),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedSoilType = result;
+      _weatherFuture = _loadWeather(customLocation: _location);
+    });
+  }
+
   Widget _buildIrrigationGauge({
     required double needScore,
     required double et0Mm,
@@ -410,6 +467,183 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+
+  Widget _build3DayComparison(SmartHydrationWeather weather) {
+    final forecastList = weather.dailyForecast;
+    if (forecastList.length < 3) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Text(
+            '3-Day Recommendation Comparison',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        Row(
+          children: forecastList.take(3).map((day) {
+            final dayOfWeek = DateTime.now()
+                .add(Duration(days: forecastList.indexOf(day)))
+                .toLocal()
+                .toString()
+                .split(' ')[0];
+            final recommendation = _aiHydrationService.recommendationForDay(
+              day: day,
+              cropType: _selectedCropType,
+              growthStage: _selectedGrowthStage,
+            );
+
+            // Determine recommendation color
+            final isSkip = day.rainProbabilityPct > 70 || (day.soilMoisturePct != null && day.soilMoisturePct! >= 70);
+            final isLight = day.humidityPct > 80;
+            final recommendationColor = isSkip
+                ? Colors.green
+                : isLight
+                    ? Colors.orange
+                    : Colors.red.shade300;
+
+            return Expanded(
+              child: Card(
+                color: recommendationColor.withValues(alpha: 0.2),
+                margin: const EdgeInsets.only(right: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        dayOfWeek,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${day.maxTempC.toStringAsFixed(0)}°C / ${day.minTempC.toStringAsFixed(0)}°C',
+                        style: const TextStyle(fontSize: 11, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Rain: ${day.rainProbabilityPct.toStringAsFixed(0)}%',
+                        style: const TextStyle(fontSize: 11, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: recommendationColor.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: Text(
+                          recommendation,
+                          style: const TextStyle(fontSize: 10, color: Colors.white),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeedbackButtons(AiHydrationInsight aiInsight) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Text(
+            'Recommendation Feedback',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _recordFeedback(aiInsight, true),
+                icon: const Icon(Icons.thumb_up),
+                label: const Text('I will follow'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _recordFeedback(aiInsight, false),
+                icon: const Icon(Icons.thumb_down),
+                label: const Text('I will skip'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _recordFeedback(AiHydrationInsight aiInsight, bool followed) async {
+    if (_location == null) return;
+
+    final weather = await _weatherFuture;
+    final record = HydrationRecord(
+      timestamp: DateTime.now(),
+      location: _location!.label,
+      cropType: _selectedCropType,
+      growthStage: _selectedGrowthStage,
+      soilType: _selectedSoilType,
+      soilMoisturePct: _soilMoisturePct ?? 50,
+      temperatureC: weather.temperatureC,
+      humidityPct: weather.humidityPct,
+      rainProbabilityPct: weather.rainProbabilityPct,
+      recommendedLevel: aiInsight.recommendedLevel,
+      confidence: aiInsight.confidence,
+      recommendedLitersPerM2: aiInsight.litersPerSquareMeter,
+      recommendedTiming: aiInsight.timingWindow,
+      farmerFollowedRecommendation: followed,
+    );
+
+    await _historyService.saveRecord(record);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            followed
+                ? 'Thank you! Your feedback helps improve recommendations.'
+                : 'Your choice noted. Recommendations will adapt.',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -671,6 +905,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
               final weather = snapshot.data!;
               final aiInsight = _aiHydrationService.analyzeCurrent(
+                                soilType: _selectedSoilType,
                 weather: weather,
                 cropType: _selectedCropType,
                 growthStage: _selectedGrowthStage,
@@ -840,6 +1075,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         color: Colors.black45,
                       ),
                     ),
+                    _build3DayComparison(weather),
+                    _buildFeedbackButtons(aiInsight),
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 8,
@@ -859,6 +1096,11 @@ class _DashboardPageState extends State<DashboardPage> {
                           onPressed: _changeGrowthStage,
                           icon: const Icon(Icons.eco),
                           label: const Text('Growth stage'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _changeSoilType,
+                          icon: const Icon(Icons.terrain),
+                          label: const Text('Soil type'),
                         ),
                         OutlinedButton.icon(
                           onPressed: _setSoilMoisture,

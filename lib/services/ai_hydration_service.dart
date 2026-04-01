@@ -6,6 +6,8 @@ enum CropType { generic, rice, chili, corn }
 
 enum GrowthStage { seedling, vegetative, flowering, fruitingOrGrainFill }
 
+// Note: SoilType is imported from models/hydration_record.dart when used in dashboard
+
 extension CropTypeLabel on CropType {
   String get label {
     switch (this) {
@@ -80,7 +82,19 @@ class AiHydrationService {
     required SmartHydrationWeather weather,
     CropType cropType = CropType.generic,
     GrowthStage growthStage = GrowthStage.vegetative,
+    dynamic soilType, // SoilType from models/hydration_record.dart
   }) {
+    // Apply soil type adjustments if provided.
+    // Dynamic typing keeps this service decoupled from model imports.
+    var soilWaterHoldingFactor = 1.0;
+    if (soilType != null) {
+      try {
+        soilWaterHoldingFactor = soilType.waterHoldingCapacityFactor as double;
+      } catch (_) {
+        // Keep default loam baseline when soil metadata is unavailable.
+      }
+    }
+
     // Calculate ET0 (Reference Evapotranspiration) using simplified Hargreaves method
     final et0Mm = _calculateET0(
       temperatureC: weather.temperatureC,
@@ -112,6 +126,10 @@ class AiHydrationService {
     needScore += _cropNeedModifier(cropType);
     needScore *= growthStage.waterDemandMultiplier; // Apply growth stage multiplier
     needScore -= moistureGuard;
+
+    // Sandy soil tends to require more frequent irrigation than clay.
+    needScore *= (1.0 / (soilWaterHoldingFactor + 0.2));
+
     needScore = _clamp01(needScore);
 
     final level = _resolveLevel(
