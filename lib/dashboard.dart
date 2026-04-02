@@ -605,10 +605,21 @@ class _DashboardPageState extends State<DashboardPage> {
                 : isLight
                     ? Colors.orange
                     : Colors.red.shade300;
+            final cardBackground = Colors.white.withValues(alpha: 0.92);
+            final cardBorder = recommendationColor.withValues(alpha: 0.65);
+            final titleColor = Colors.black87;
+            final bodyColor = Colors.black87;
+            final recommendationTextColor = recommendationColor.withValues(alpha: 0.95);
 
             return Expanded(
               child: Card(
-                color: recommendationColor.withValues(alpha: 0.15),
+                color: cardBackground,
+                elevation: 2,
+                shadowColor: Colors.black.withValues(alpha: 0.16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: cardBorder, width: 1.2),
+                ),
                 margin: EdgeInsets.only(right: index == 2 ? 0 : 8),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -620,26 +631,26 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
-                          color: Colors.black87,
+                          color: titleColor,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${day.maxTempC.toStringAsFixed(0)}°C / ${day.minTempC.toStringAsFixed(0)}°C',
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        style: TextStyle(fontSize: 11, color: bodyColor.withValues(alpha: 0.75)),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Rain: ${day.rainProbabilityPct.toStringAsFixed(0)}%',
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        style: TextStyle(fontSize: 11, color: bodyColor.withValues(alpha: 0.75)),
                       ),
                       const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
-                          color: recommendationColor.withValues(alpha: 0.18),
+                          color: recommendationColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: recommendationColor.withValues(alpha: 0.35),
+                            color: cardBorder,
                           ),
                         ),
                         padding: const EdgeInsets.all(4),
@@ -647,7 +658,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           recommendation,
                           style: TextStyle(
                             fontSize: 10,
-                            color: recommendationColor.withValues(alpha: 0.95),
+                            color: recommendationTextColor,
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 2,
