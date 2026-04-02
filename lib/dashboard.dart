@@ -1740,10 +1740,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 growthStage: _selectedGrowthStage,
               );
               final statusColor = _statusColor(aiInsight.recommendedLevel);
-              return InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => _openWeeklyDashboard(weather),
-                child: Column(
+              return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -2006,7 +2003,6 @@ class _DashboardPageState extends State<DashboardPage> {
                       ],
                     ),
                   ],
-                ),
               );
             },
           ),
