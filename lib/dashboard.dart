@@ -1874,6 +1874,15 @@ class _DashboardPageState extends State<DashboardPage> {
                       ],
                     ),
                     const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FilledButton.icon(
+                        onPressed: () => _openWeeklyDashboard(weather),
+                        icon: const Icon(Icons.open_in_full),
+                        label: const Text('7-day details'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Text(
                       'Temperature ${weather.temperatureC.toStringAsFixed(0)}°C  |  Humidity ${weather.humidityPct.toStringAsFixed(0)}%  |  Rain chance ${weather.rainProbabilityPct.toStringAsFixed(0)}%',
                       style: TextStyle(
@@ -2085,11 +2094,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           onPressed: _setSoilMoisture,
                           icon: const Icon(Icons.water_drop),
                           label: const Text('Soil moisture'),
-                        ),
-                        FilledButton.icon(
-                          onPressed: () => _openWeeklyDashboard(weather),
-                          icon: const Icon(Icons.open_in_full),
-                          label: const Text('7-day details'),
                         ),
                       ],
                     ),
