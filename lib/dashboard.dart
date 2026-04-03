@@ -871,11 +871,12 @@ class z_DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: tint.withValues(alpha: 0.28)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 2,
         children: [
           Icon(icon, size: 14, color: tint),
-          const SizedBox(width: 6),
           Text(
             '$label: $value',
             style: const TextStyle(
@@ -883,6 +884,7 @@ class z_DashboardPageState extends State<DashboardPage> {
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
+            softWrap: true,
           ),
         ],
       ),
@@ -945,8 +947,10 @@ class z_DashboardPageState extends State<DashboardPage> {
             ),
           ),
         ),
-        Row(
-          children: List.generate(3, (index) {
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(3, (index) {
             final day = forecastList[index];
             final dayOfWeek = _weekdayShort(day.date.weekday);
             final recommendation = _aiHydrationService.recommendationForDay(
@@ -969,7 +973,8 @@ class z_DashboardPageState extends State<DashboardPage> {
             final bodyColor = Colors.black87;
             final recommendationTextColor = recommendationColor.withValues(alpha: 0.95);
 
-            return Expanded(
+            return SizedBox(
+              width: 220,
               child: Card(
                 color: cardBackground,
                 elevation: 2,
@@ -1029,6 +1034,7 @@ class z_DashboardPageState extends State<DashboardPage> {
               ),
             );
           }),
+          ),
         ),
       ],
     );
@@ -1555,18 +1561,22 @@ class z_DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const Expanded(
-                child: Text(
-                  'Water Savings Tracker',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                ),
+              const Text(
+                'Water Savings Tracker',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
               TextButton.icon(
                 onPressed: _setFieldArea,
                 icon: const Icon(Icons.straighten, size: 16),
-                label: Text(_fieldAreaDisplayLabel()),
+                label: Text(
+                  _fieldAreaDisplayLabel(),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -1643,13 +1653,14 @@ class z_DashboardPageState extends State<DashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'History Insights (30 days)',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                    ),
+                  const Text(
+                    'History Insights (30 days)',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
                   IconButton(
                     tooltip: 'Refresh history',
@@ -1659,72 +1670,80 @@ class z_DashboardPageState extends State<DashboardPage> {
                 ],
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  SizedBox(
-                    width: 170,
-                    child: DropdownButtonFormField<CropType?>(
-                      initialValue: _historyCropFilter,
-                      decoration: const InputDecoration(
-                        labelText: 'Filter crop',
-                        border: OutlineInputBorder(),
-                        isDense: true,
-                      ),
-                      items: [
-                        const DropdownMenuItem<CropType?>(
-                          value: null,
-                          child: Text('All crops'),
-                        ),
-                        ...CropType.values.map(
-                          (crop) => DropdownMenuItem<CropType?>(
-                            value: crop,
-                            child: Text(crop.label),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = constraints.maxWidth;
+                  final cropWidth = maxWidth >= 420 ? 170.0 : maxWidth;
+                  final locationWidth = maxWidth >= 420 ? 210.0 : maxWidth;
+
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      SizedBox(
+                        width: cropWidth,
+                        child: DropdownButtonFormField<CropType?>(
+                          initialValue: _historyCropFilter,
+                          decoration: const InputDecoration(
+                            labelText: 'Filter crop',
+                            border: OutlineInputBorder(),
+                            isDense: true,
                           ),
+                          items: [
+                            const DropdownMenuItem<CropType?>(
+                              value: null,
+                              child: Text('All crops'),
+                            ),
+                            ...CropType.values.map(
+                              (crop) => DropdownMenuItem<CropType?>(
+                                value: crop,
+                                child: Text(crop.label),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _historyCropFilter = value;
+                            });
+                          },
                         ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _historyCropFilter = value;
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: 210,
-                    child: DropdownButtonFormField<String?>(
-                      initialValue: _historyLocationFilter,
-                      decoration: const InputDecoration(
-                        labelText: 'Filter location',
-                        border: OutlineInputBorder(),
-                        isDense: true,
                       ),
-                      items: [
-                        const DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text('All locations'),
-                        ),
-                        ...locations.map(
-                          (location) => DropdownMenuItem<String?>(
-                            value: location,
-                            child: Text(location, overflow: TextOverflow.ellipsis),
+                      SizedBox(
+                        width: locationWidth,
+                        child: DropdownButtonFormField<String?>(
+                          initialValue: _historyLocationFilter,
+                          decoration: const InputDecoration(
+                            labelText: 'Filter location',
+                            border: OutlineInputBorder(),
+                            isDense: true,
                           ),
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text('All locations'),
+                            ),
+                            ...locations.map(
+                              (location) => DropdownMenuItem<String?>(
+                                value: location,
+                                child: Text(location, overflow: TextOverflow.ellipsis),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _historyLocationFilter = value;
+                            });
+                          },
                         ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _historyLocationFilter = value;
-                        });
-                      },
-                    ),
-                  ),
-                  FilledButton.icon(
-                    onPressed: filtered.isEmpty ? null : () => _exportHistoryCsv(filtered),
-                    icon: const Icon(Icons.file_download),
-                    label: const Text('Export CSV'),
-                  ),
-                ],
+                      ),
+                      FilledButton.icon(
+                        onPressed: filtered.isEmpty ? null : () => _exportHistoryCsv(filtered),
+                        icon: const Icon(Icons.file_download),
+                        label: const Text('Export CSV'),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -2248,6 +2267,8 @@ class z_DashboardPageState extends State<DashboardPage> {
                             children: [
                               Text(
                                 weather.locationName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w700,
@@ -2256,6 +2277,8 @@ class z_DashboardPageState extends State<DashboardPage> {
                               ),
                               Text(
                                 '${weather.temperatureC.toStringAsFixed(1)}°C - ${weather.conditionLabel}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
