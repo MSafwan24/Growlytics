@@ -10,7 +10,6 @@ import 'package:growlytics/services/location_service.dart';
 import 'package:growlytics/services/weather_service.dart';
 import 'package:growlytics/models/hydration_record.dart';
 import 'package:growlytics/services/hydration_history_service.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -2770,13 +2769,14 @@ class _AnimatedFarmTitleState extends State<_AnimatedFarmTitle>
 
   @override
   Widget build(BuildContext context) {
-    final baseStyle = GoogleFonts.breeSerif(
+    const baseStyle = TextStyle(
+      fontFamily: 'BreeSerif',
       fontSize: 34,
       fontWeight: FontWeight.w700,
       letterSpacing: 0.5,
       color: Colors.white,
       height: 1,
-      shadows: const [
+      shadows: [
         Shadow(color: Color(0x5B10230B), blurRadius: 8, offset: Offset(0, 2)),
       ],
     );
