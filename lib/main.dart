@@ -3,6 +3,7 @@ import 'package:growlytics/dashboard.dart';
 import 'package:growlytics/visionscanner.dart';
 import 'package:growlytics/prescription.dart';
 import 'package:growlytics/yieldpredictor.dart';
+import 'package:growlytics/vision_scout.dart';
 
 //Act as remote control
 final GlobalKey<MainPageState> mainPageKey = GlobalKey<MainPageState>();
@@ -48,7 +49,7 @@ class MainPageState extends State<MainPage> {
 
   final List <Widget> _pages = [
     const DashboardPage(),
-    const VisionScannerPage(),
+    const VisionScoutScreen(),
     const EcoPrescriptionPage(),
     const YieldPredictorPage(),
   ];
