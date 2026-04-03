@@ -684,6 +684,7 @@ class z_DashboardPageState extends State<DashboardPage> {
       : gaugeValue >= 0.45
         ? 'Water soon, but not urgent right now.'
         : 'Soil conditions are okay for now.';
+    final confidencePct = (confidence * 100).clamp(0, 100).toStringAsFixed(0);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -733,7 +734,141 @@ class z_DashboardPageState extends State<DashboardPage> {
             levelHelpText,
             style: const TextStyle(fontSize: 12, color: Colors.black54),
           ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildGaugeFactChip(
+                icon: Icons.thermostat,
+                label: 'ET0',
+                value: '${et0Mm.toStringAsFixed(1)} mm',
+                tint: gaugeColor,
+              ),
+              _buildGaugeFactChip(
+                icon: Icons.verified,
+                label: 'Confidence',
+                value: '$confidencePct%',
+                tint: gaugeColor,
+              ),
+              _buildGaugeFactChip(
+                icon: Icons.water_drop,
+                label: 'Water',
+                value: '${liters.toStringAsFixed(1)} L/m²',
+                tint: gaugeColor,
+              ),
+              _buildGaugeFactChip(
+                icon: Icons.schedule,
+                label: 'Timing',
+                value: timing,
+                tint: gaugeColor,
+              ),
+              _buildGaugeFactChip(
+                icon: Icons.grass,
+                label: 'Profile',
+                value: '${cropType.label} - ${growthStage.label}',
+                tint: gaugeColor,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Simple term guide',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 6),
+                _buildGaugeTermExplanation(
+                  term: 'Need score',
+                  meaning:
+                      'How urgent watering is today. Higher percent means more urgent.',
+                ),
+                _buildGaugeTermExplanation(
+                  term: 'ET0',
+                  meaning:
+                      'Estimated daily water loss from soil and leaves due to weather. Higher means plants dry faster.',
+                ),
+                _buildGaugeTermExplanation(
+                  term: 'Confidence',
+                  meaning:
+                      'How sure the AI is about this recommendation from current weather patterns.',
+                ),
+                _buildGaugeTermExplanation(
+                  term: 'Water (L/m²)',
+                  meaning:
+                      'Liters to apply for each 1 square meter of field area.',
+                ),
+                _buildGaugeTermExplanation(
+                  term: 'Timing',
+                  meaning:
+                      'Best watering window to reduce heat stress and evaporation losses.',
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGaugeFactChip({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color tint,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tint.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: tint),
+          const SizedBox(width: 6),
+          Text(
+            '$label: $value',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGaugeTermExplanation({
+    required String term,
+    required String meaning,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(fontSize: 11, color: Colors.black87),
+          children: [
+            TextSpan(
+              text: '$term: ',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            TextSpan(text: meaning),
+          ],
+        ),
       ),
     );
   }
