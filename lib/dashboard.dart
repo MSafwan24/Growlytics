@@ -1274,10 +1274,10 @@ class z_DashboardPageState extends State<DashboardPage> {
 
     var estimatedWaterSaved = 0.0;
     for (final record in records) {
-      if (record.farmerFollowedRecommendation == true &&
-          record.recommendedLevel == IrrigationLevel.skip) {
-        estimatedWaterSaved += record.recommendedLitersPerM2 * 100;
-      }
+      estimatedWaterSaved += _savedLitersForRecord(
+        record,
+        fieldAreaM2: _fieldAreaM2,
+      );
     }
 
     return _HistorySummary(
@@ -1503,15 +1503,13 @@ class z_DashboardPageState extends State<DashboardPage> {
     var savedLiters = 0.0;
     var followedSmartActions = 0;
     for (final record in scoped) {
-      if (record.farmerFollowedRecommendation != true) {
-        continue;
-      }
-      if (record.recommendedLevel == IrrigationLevel.skip) {
+      final savedForRecord = _savedLitersForRecord(
+        record,
+        fieldAreaM2: _fieldAreaM2,
+      );
+      if (savedForRecord > 0) {
         followedSmartActions++;
-        savedLiters += record.recommendedLitersPerM2 * _fieldAreaM2;
-      } else if (record.recommendedLevel == IrrigationLevel.waterLightly) {
-        followedSmartActions++;
-        savedLiters += (record.recommendedLitersPerM2 * _fieldAreaM2) * 0.35;
+        savedLiters += savedForRecord;
       }
     }
 
@@ -1521,6 +1519,22 @@ class z_DashboardPageState extends State<DashboardPage> {
       savedCostRm: (savedLiters / 1000) * rmPer1000L,
       smartActionsCount: followedSmartActions,
     );
+  }
+
+  double _savedLitersForRecord(
+    HydrationRecord record, {
+    required double fieldAreaM2,
+  }) {
+    if (record.farmerFollowedRecommendation != true) {
+      return 0;
+    }
+    if (record.recommendedLevel == IrrigationLevel.skip) {
+      return record.recommendedLitersPerM2 * fieldAreaM2;
+    }
+    if (record.recommendedLevel == IrrigationLevel.waterLightly) {
+      return (record.recommendedLitersPerM2 * fieldAreaM2) * 0.35;
+    }
+    return 0;
   }
 
   Widget _buildWaterSavingsTracker(List<HydrationRecord> records) {
