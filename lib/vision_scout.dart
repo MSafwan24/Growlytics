@@ -5,7 +5,7 @@ import 'package:tflite_v2/tflite_v2.dart';
 import 'package:growlytics/main.dart'; // <-- Imports your team's remote control
 
 class VisionScoutScreen extends StatefulWidget {
-  const VisionScoutScreen({Key? key}) : super(key: key);
+  const VisionScoutScreen({super.key});
 
   @override
   _VisionScoutScreenState createState() => _VisionScoutScreenState();

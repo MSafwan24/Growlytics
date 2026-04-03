@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:growlytics/dashboard.dart';
-import 'package:growlytics/visionscanner.dart';
 import 'package:growlytics/prescription.dart';
-import 'package:growlytics/yieldpredictor.dart';
 import 'package:growlytics/vision_scout.dart';
 
 //Act as remote control
