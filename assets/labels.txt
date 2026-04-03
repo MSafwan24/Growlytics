@@ -1,3 +1,6 @@
 Tomato Healthy Leaf
 Tomato Yellow Leaf Curl Virus
 Tomato Early Blight
+Watermelon Healthy Leaf
+Watermelon Mosaic Virus
+Watermelon Downy Mildew
