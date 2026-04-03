@@ -183,8 +183,7 @@ class z_DashboardPageState extends State<DashboardPage> {
     final states = malaysiaLocationsByState.keys.toList()..sort();
 
     var selectedState = _initialStateSelection(states);
-    var selectedLocation =
-        malaysiaLocationsByState[selectedState]!.first;
+    var selectedLocation = malaysiaLocationsByState[selectedState]!.first;
 
     final result = await showDialog<_MalaysiaLocationSelection>(
       context: context,
@@ -486,7 +485,9 @@ class z_DashboardPageState extends State<DashboardPage> {
                         soil == _selectedSoilType
                             ? Icons.check_circle
                             : Icons.circle_outlined,
-                        color: soil == _selectedSoilType ? Colors.green.shade700 : Colors.grey,
+                        color: soil == _selectedSoilType
+                            ? Colors.green.shade700
+                            : Colors.grey,
                       ),
                       title: Text(soil.label),
                       subtitle: Column(
@@ -563,7 +564,9 @@ class z_DashboardPageState extends State<DashboardPage> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No pending followed recommendation found for 24h outcome.'),
+          content: Text(
+            'No pending followed recommendation found for 24h outcome.',
+          ),
         ),
       );
       return;
@@ -671,18 +674,18 @@ class z_DashboardPageState extends State<DashboardPage> {
     final gaugeColor = gaugeValue >= 0.7
         ? Colors.red
         : gaugeValue >= 0.45
-            ? Colors.orange
-            : Colors.green;
+        ? Colors.orange
+        : Colors.green;
 
     final levelText = gaugeValue >= 0.7
-      ? 'High'
-      : gaugeValue >= 0.45
+        ? 'High'
+        : gaugeValue >= 0.45
         ? 'Medium'
         : 'Low';
 
     final levelHelpText = gaugeValue >= 0.7
-      ? 'Your crops are likely to need water today.'
-      : gaugeValue >= 0.45
+        ? 'Your crops are likely to need water today.'
+        : gaugeValue >= 0.45
         ? 'Water soon, but not urgent right now.'
         : 'Soil conditions are okay for now.';
     final confidencePct = (confidence * 100).clamp(0, 100).toStringAsFixed(0);
@@ -798,7 +801,10 @@ class z_DashboardPageState extends State<DashboardPage> {
                         const Expanded(
                           child: Text(
                             'Simple term guide',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                         Icon(
@@ -951,88 +957,96 @@ class z_DashboardPageState extends State<DashboardPage> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: List.generate(3, (index) {
-            final day = forecastList[index];
-            final dayOfWeek = _weekdayShort(day.date.weekday);
-            final dayInsight = _aiHydrationService.analyzeForecastDay(
-              day: day,
-              contextWeather: weather,
-              cropType: _selectedCropType,
-              growthStage: _selectedGrowthStage,
-              soilType: _selectedSoilType,
-              adaptiveNeedBias: _adaptiveNeedBias,
-            );
-            final recommendation =
-                '${_beginnerActionText(dayInsight.recommendedLevel)} (${dayInsight.timingWindow})';
+              final day = forecastList[index];
+              final dayOfWeek = _weekdayShort(day.date.weekday);
+              final dayInsight = _aiHydrationService.analyzeForecastDay(
+                day: day,
+                contextWeather: weather,
+                cropType: _selectedCropType,
+                growthStage: _selectedGrowthStage,
+                soilType: _selectedSoilType,
+                adaptiveNeedBias: _adaptiveNeedBias,
+              );
+              final recommendation =
+                  '${_beginnerActionText(dayInsight.recommendedLevel)} (${dayInsight.timingWindow})';
 
-            // Determine recommendation color
-            final recommendationColor = _statusColor(dayInsight.recommendedLevel);
-            final cardBackground = Colors.white.withValues(alpha: 0.92);
-            final cardBorder = recommendationColor.withValues(alpha: 0.65);
-            final titleColor = Colors.black87;
-            final bodyColor = Colors.black87;
-            final recommendationTextColor = recommendationColor.withValues(alpha: 0.95);
+              // Determine recommendation color
+              final recommendationColor = _statusColor(
+                dayInsight.recommendedLevel,
+              );
+              final cardBackground = Colors.white.withValues(alpha: 0.92);
+              final cardBorder = recommendationColor.withValues(alpha: 0.65);
+              final titleColor = Colors.black87;
+              final bodyColor = Colors.black87;
+              final recommendationTextColor = recommendationColor.withValues(
+                alpha: 0.95,
+              );
 
-            return SizedBox(
-              width: 220,
-              child: Card(
-                color: cardBackground,
-                elevation: 2,
-                shadowColor: Colors.black.withValues(alpha: 0.16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: cardBorder, width: 1.2),
-                ),
-                margin: EdgeInsets.only(right: index == 2 ? 0 : 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        dayOfWeek,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: titleColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${day.maxTempC.toStringAsFixed(0)}°C / ${day.minTempC.toStringAsFixed(0)}°C',
-                        style: TextStyle(fontSize: 11, color: bodyColor.withValues(alpha: 0.75)),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Rain: ${day.rainProbabilityPct.toStringAsFixed(0)}%',
-                        style: TextStyle(fontSize: 11, color: bodyColor.withValues(alpha: 0.75)),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: recommendationColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: cardBorder,
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(4),
-                        child: Text(
-                          recommendation,
+              return SizedBox(
+                width: 220,
+                child: Card(
+                  color: cardBackground,
+                  elevation: 2,
+                  shadowColor: Colors.black.withValues(alpha: 0.16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: cardBorder, width: 1.2),
+                  ),
+                  margin: EdgeInsets.only(right: index == 2 ? 0 : 8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dayOfWeek,
                           style: TextStyle(
-                            fontSize: 10,
-                            color: recommendationTextColor,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: titleColor,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${day.maxTempC.toStringAsFixed(0)}°C / ${day.minTempC.toStringAsFixed(0)}°C',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: bodyColor.withValues(alpha: 0.75),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Rain: ${day.rainProbabilityPct.toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: bodyColor.withValues(alpha: 0.75),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: recommendationColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: cardBorder),
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: Text(
+                            recommendation,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: recommendationTextColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
           ),
         ),
       ],
@@ -1041,8 +1055,10 @@ class z_DashboardPageState extends State<DashboardPage> {
 
   Widget _buildFeedbackButtons(AiHydrationInsight aiInsight) {
     final canTap = !_isSavingFeedback;
-    final followRecorded = _lastFeedbackFollowed == true && _lastFeedbackAt != null;
-    final skipRecorded = _lastFeedbackFollowed == false && _lastFeedbackAt != null;
+    final followRecorded =
+        _lastFeedbackFollowed == true && _lastFeedbackAt != null;
+    final skipRecorded =
+        _lastFeedbackFollowed == false && _lastFeedbackAt != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1062,7 +1078,9 @@ class z_DashboardPageState extends State<DashboardPage> {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: canTap ? () => _recordFeedback(aiInsight, true) : null,
+                onPressed: canTap
+                    ? () => _recordFeedback(aiInsight, true)
+                    : null,
                 icon: _isSavingFeedback
                     ? const SizedBox(
                         width: 16,
@@ -1072,13 +1090,15 @@ class z_DashboardPageState extends State<DashboardPage> {
                           color: Colors.white,
                         ),
                       )
-                    : Icon(followRecorded ? Icons.check_circle : Icons.thumb_up),
+                    : Icon(
+                        followRecorded ? Icons.check_circle : Icons.thumb_up,
+                      ),
                 label: Text(
                   _isSavingFeedback
                       ? 'Saving...'
                       : followRecorded
-                          ? 'Recorded'
-                          : 'I will follow',
+                      ? 'Recorded'
+                      : 'I will follow',
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
@@ -1089,7 +1109,9 @@ class z_DashboardPageState extends State<DashboardPage> {
             const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: canTap ? () => _recordFeedback(aiInsight, false) : null,
+                onPressed: canTap
+                    ? () => _recordFeedback(aiInsight, false)
+                    : null,
                 icon: _isSavingFeedback
                     ? const SizedBox(
                         width: 16,
@@ -1099,13 +1121,15 @@ class z_DashboardPageState extends State<DashboardPage> {
                           color: Colors.white,
                         ),
                       )
-                    : Icon(skipRecorded ? Icons.check_circle : Icons.thumb_down),
+                    : Icon(
+                        skipRecorded ? Icons.check_circle : Icons.thumb_down,
+                      ),
                 label: Text(
                   _isSavingFeedback
                       ? 'Saving...'
                       : skipRecorded
-                          ? 'Recorded'
-                          : 'I will skip',
+                      ? 'Recorded'
+                      : 'I will skip',
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
@@ -1142,22 +1166,27 @@ class z_DashboardPageState extends State<DashboardPage> {
                   key: ValueKey<String>(_lastFeedbackMessage!),
                   margin: const EdgeInsets.only(top: 8),
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: (_lastFeedbackFollowed == true
-                            ? Colors.green
-                            : _lastFeedbackFollowed == false
+                    color:
+                        (_lastFeedbackFollowed == true
+                                ? Colors.green
+                                : _lastFeedbackFollowed == false
                                 ? Colors.orange
                                 : Colors.blueGrey)
-                        .withValues(alpha: 0.12),
+                            .withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: (_lastFeedbackFollowed == true
-                              ? Colors.green
-                              : _lastFeedbackFollowed == false
+                      color:
+                          (_lastFeedbackFollowed == true
+                                  ? Colors.green
+                                  : _lastFeedbackFollowed == false
                                   ? Colors.orange
                                   : Colors.blueGrey)
-                          .withValues(alpha: 0.35),
+                              .withValues(alpha: 0.35),
                     ),
                   ),
                   child: Text(
@@ -1175,7 +1204,10 @@ class z_DashboardPageState extends State<DashboardPage> {
     return names[(weekday - 1).clamp(0, 6)];
   }
 
-  Future<void> _recordFeedback(AiHydrationInsight aiInsight, bool followed) async {
+  Future<void> _recordFeedback(
+    AiHydrationInsight aiInsight,
+    bool followed,
+  ) async {
     if (_location == null || _isSavingFeedback) return;
 
     setState(() {
@@ -1224,7 +1256,9 @@ class z_DashboardPageState extends State<DashboardPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          backgroundColor: followed ? Colors.green.shade700 : Colors.orange.shade700,
+          backgroundColor: followed
+              ? Colors.green.shade700
+              : Colors.orange.shade700,
           content: Text(
             followed
                 ? 'Recorded successfully: feedback saved.'
@@ -1244,7 +1278,9 @@ class z_DashboardPageState extends State<DashboardPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Failed to save feedback. Check connection and try again.'),
+          content: Text(
+            'Failed to save feedback. Check connection and try again.',
+          ),
         ),
       );
     }
@@ -1252,9 +1288,11 @@ class z_DashboardPageState extends State<DashboardPage> {
 
   List<HydrationRecord> _filteredHistoryRecords(List<HydrationRecord> records) {
     return records.where((record) {
-      final cropMatches = _historyCropFilter == null || record.cropType == _historyCropFilter;
+      final cropMatches =
+          _historyCropFilter == null || record.cropType == _historyCropFilter;
       final locationMatches =
-          _historyLocationFilter == null || record.location == _historyLocationFilter;
+          _historyLocationFilter == null ||
+          record.location == _historyLocationFilter;
       return cropMatches && locationMatches;
     }).toList();
   }
@@ -1270,12 +1308,15 @@ class z_DashboardPageState extends State<DashboardPage> {
       );
     }
 
-    final feedbackRecords =
-        records.where((record) => record.farmerFollowedRecommendation != null).toList();
-    final followedCount =
-        feedbackRecords.where((record) => record.farmerFollowedRecommendation == true).length;
+    final feedbackRecords = records
+        .where((record) => record.farmerFollowedRecommendation != null)
+        .toList();
+    final followedCount = feedbackRecords
+        .where((record) => record.farmerFollowedRecommendation == true)
+        .length;
     final avgConfidence =
-        records.map((record) => record.confidence).reduce((a, b) => a + b) / records.length;
+        records.map((record) => record.confidence).reduce((a, b) => a + b) /
+        records.length;
 
     var estimatedWaterSaved = 0.0;
     for (final record in records) {
@@ -1288,7 +1329,9 @@ class z_DashboardPageState extends State<DashboardPage> {
     return _HistorySummary(
       totalRecommendations: records.length,
       followedCount: followedCount,
-      followRate: feedbackRecords.isEmpty ? 0 : followedCount / feedbackRecords.length,
+      followRate: feedbackRecords.isEmpty
+          ? 0
+          : followedCount / feedbackRecords.length,
       averageConfidence: avgConfidence,
       estimatedWaterSavedLiters: estimatedWaterSaved,
     );
@@ -1300,7 +1343,9 @@ class z_DashboardPageState extends State<DashboardPage> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No history data to export for selected filters.')),
+        const SnackBar(
+          content: Text('No history data to export for selected filters.'),
+        ),
       );
       return;
     }
@@ -1329,7 +1374,9 @@ class z_DashboardPageState extends State<DashboardPage> {
           record.confidence.toStringAsFixed(2),
           record.recommendedLitersPerM2.toStringAsFixed(2),
           escapeCsv(record.recommendedTiming),
-          escapeCsv(record.farmerFollowedRecommendation?.toString() ?? 'unknown'),
+          escapeCsv(
+            record.farmerFollowedRecommendation?.toString() ?? 'unknown',
+          ),
         ].join(','),
       );
     }
@@ -1367,7 +1414,10 @@ class z_DashboardPageState extends State<DashboardPage> {
                   child: SingleChildScrollView(
                     child: SelectableText(
                       const LineSplitter().convert(csv).take(12).join('\n'),
-                      style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
                 ),
@@ -1395,9 +1445,7 @@ class z_DashboardPageState extends State<DashboardPage> {
       barrierDismissible: !isFirstTimeSetup,
       builder: (context) {
         return AlertDialog(
-          title: Text(
-            isFirstTimeSetup ? 'Farm size setup' : 'Set field area',
-          ),
+          title: Text(isFirstTimeSetup ? 'Farm size setup' : 'Set field area'),
           content: StatefulBuilder(
             builder: (context, setDialogState) {
               return Column(
@@ -1442,7 +1490,9 @@ class z_DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: controller,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Area (${draftUnit.label})',
                       hintText: 'Example: ${draftUnit.exampleValue}',
@@ -1476,8 +1526,9 @@ class z_DashboardPageState extends State<DashboardPage> {
       return;
     }
     final parsedInput = double.tryParse(controller.text.trim());
-    final parsedM2 =
-        parsedInput == null ? null : draftUnit.toSquareMeter(parsedInput);
+    final parsedM2 = parsedInput == null
+        ? null
+        : draftUnit.toSquareMeter(parsedInput);
     if (parsedM2 == null || parsedM2 <= 0) {
       if (!mounted) {
         return;
@@ -1547,7 +1598,9 @@ class z_DashboardPageState extends State<DashboardPage> {
     final week = _waterSavingsForPeriod(records, const Duration(days: 7));
     final month = _waterSavingsForPeriod(records, const Duration(days: 30));
     const monthlyGoalLiters = 5000.0;
-    final progress = (month.savedLiters / monthlyGoalLiters).clamp(0, 1).toDouble();
+    final progress = (month.savedLiters / monthlyGoalLiters)
+        .clamp(0, 1)
+        .toDouble();
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -1584,10 +1637,22 @@ class z_DashboardPageState extends State<DashboardPage> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _historyMetricTile('Today', '${today.savedLiters.toStringAsFixed(0)} L'),
-              _historyMetricTile('7 days', '${week.savedLiters.toStringAsFixed(0)} L'),
-              _historyMetricTile('30 days', '${month.savedLiters.toStringAsFixed(0)} L'),
-              _historyMetricTile('Saved cost', 'RM ${month.savedCostRm.toStringAsFixed(2)}'),
+              _historyMetricTile(
+                'Today',
+                '${today.savedLiters.toStringAsFixed(0)} L',
+              ),
+              _historyMetricTile(
+                '7 days',
+                '${week.savedLiters.toStringAsFixed(0)} L',
+              ),
+              _historyMetricTile(
+                '30 days',
+                '${month.savedLiters.toStringAsFixed(0)} L',
+              ),
+              _historyMetricTile(
+                'Saved cost',
+                'RM ${month.savedCostRm.toStringAsFixed(2)}',
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -1602,7 +1667,9 @@ class z_DashboardPageState extends State<DashboardPage> {
               minHeight: 10,
               value: progress,
               backgroundColor: Colors.lightBlue.withValues(alpha: 0.15),
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.lightBlue.shade700),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Colors.lightBlue.shade700,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -1639,7 +1706,9 @@ class z_DashboardPageState extends State<DashboardPage> {
         final allRecords = snapshot.data ?? const <HydrationRecord>[];
         final filtered = _filteredHistoryRecords(allRecords);
         final summary = _summarizeRecords(filtered);
-        final locations = allRecords.map((record) => record.location).toSet().toList()..sort();
+        final locations =
+            allRecords.map((record) => record.location).toSet().toList()
+              ..sort();
 
         return Container(
           margin: const EdgeInsets.only(top: 12),
@@ -1724,7 +1793,10 @@ class z_DashboardPageState extends State<DashboardPage> {
                             ...locations.map(
                               (location) => DropdownMenuItem<String?>(
                                 value: location,
-                                child: Text(location, overflow: TextOverflow.ellipsis),
+                                child: Text(
+                                  location,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ),
                           ],
@@ -1736,7 +1808,9 @@ class z_DashboardPageState extends State<DashboardPage> {
                         ),
                       ),
                       FilledButton.icon(
-                        onPressed: filtered.isEmpty ? null : () => _exportHistoryCsv(filtered),
+                        onPressed: filtered.isEmpty
+                            ? null
+                            : () => _exportHistoryCsv(filtered),
                         icon: const Icon(Icons.file_download),
                         label: const Text('Export CSV'),
                       ),
@@ -1749,7 +1823,10 @@ class z_DashboardPageState extends State<DashboardPage> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _historyMetricTile('Recommendations', '${summary.totalRecommendations}'),
+                  _historyMetricTile(
+                    'Recommendations',
+                    '${summary.totalRecommendations}',
+                  ),
                   _historyMetricTile(
                     'Follow rate',
                     '${(summary.followRate * 100).toStringAsFixed(0)}%',
@@ -1797,7 +1874,10 @@ class z_DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Colors.black54),
+          ),
           const SizedBox(height: 3),
           Text(
             value,
@@ -1840,9 +1920,7 @@ class z_DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 Positioned.fill(
-                  child: Container(
-                    color: _appBackgroundWashForVisual(visual),
-                  ),
+                  child: Container(color: _appBackgroundWashForVisual(visual)),
                 ),
                 Positioned.fill(
                   child: SingleChildScrollView(
@@ -1850,13 +1928,12 @@ class z_DashboardPageState extends State<DashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Growlytics',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        Row(
+                          children: [
+                            _GrowingTreeLogo(reduceMotion: reduceMotion),
+                            const SizedBox(width: 12),
+                            _AnimatedFarmTitle(reduceMotion: reduceMotion),
+                          ],
                         ),
                         const Text(
                           'Your Personal AI Agronomist',
@@ -2009,35 +2086,17 @@ class z_DashboardPageState extends State<DashboardPage> {
   List<Color> _appBackgroundTintForVisual(_WeatherVisual visual) {
     switch (visual) {
       case _WeatherVisual.sunny:
-        return [
-          const Color(0x33FFF2B8),
-          const Color(0x22FFD36E),
-        ];
+        return [const Color(0x33FFF2B8), const Color(0x22FFD36E)];
       case _WeatherVisual.rainy:
-        return [
-          const Color(0x334A79B6),
-          const Color(0x221E3C63),
-        ];
+        return [const Color(0x334A79B6), const Color(0x221E3C63)];
       case _WeatherVisual.cloudy:
-        return [
-          const Color(0x44798996),
-          const Color(0x335A6878),
-        ];
+        return [const Color(0x44798996), const Color(0x335A6878)];
       case _WeatherVisual.partlyCloudy:
-        return [
-          const Color(0x446E7E8E),
-          const Color(0x335D6A79),
-        ];
+        return [const Color(0x446E7E8E), const Color(0x335D6A79)];
       case _WeatherVisual.windy:
-        return [
-          const Color(0x3349A98F),
-          const Color(0x2245A085),
-        ];
+        return [const Color(0x3349A98F), const Color(0x2245A085)];
       case _WeatherVisual.night:
-        return [
-          const Color(0x442B3768),
-          const Color(0x66111A33),
-        ];
+        return [const Color(0x442B3768), const Color(0x66111A33)];
     }
   }
 
@@ -2251,320 +2310,328 @@ class z_DashboardPageState extends State<DashboardPage> {
                   aiInsight.litersPerSquareMeter * _fieldAreaM2;
               final statusColor = _statusColor(aiInsight.recommendedLevel);
               return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _AnimatedWeatherIcon(
-                          weatherCode: weather.weatherCode,
-                          size: 44,
-                          reduceMotion: reduceMotion,
-                          accentColor: palette.border,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                weather.locationName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: palette.primaryText,
-                                ),
-                              ),
-                              Text(
-                                '${weather.temperatureC.toStringAsFixed(1)}°C - ${weather.conditionLabel}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  color: palette.primaryText,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'Refresh weather',
-                          onPressed: _refreshWeather,
-                          icon: const Icon(Icons.refresh),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: FilledButton.icon(
-                        onPressed: () => _openWeeklyDashboard(weather),
-                        icon: const Icon(Icons.open_in_full),
-                        label: const Text('7-day details'),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      _AnimatedWeatherIcon(
+                        weatherCode: weather.weatherCode,
+                        size: 44,
+                        reduceMotion: reduceMotion,
+                        accentColor: palette.border,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Temperature ${weather.temperatureC.toStringAsFixed(0)}°C  |  Humidity ${weather.humidityPct.toStringAsFixed(0)}%  |  Rain chance ${weather.rainProbabilityPct.toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        color: palette.secondaryText,
-                        fontSize: 15,
-                      ),
-                    ),
-                    if (_soilMoisturePct != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Soil moisture ${_soilMoisturePct!.toStringAsFixed(0)}%',
-                        style: TextStyle(
-                          color: palette.secondaryText,
-                          fontSize: 16,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              weather.locationName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: palette.primaryText,
+                              ),
+                            ),
+                            Text(
+                              '${weather.temperatureC.toStringAsFixed(1)}°C - ${weather.conditionLabel}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: palette.primaryText,
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                      IconButton(
+                        tooltip: 'Refresh weather',
+                        onPressed: _refreshWeather,
+                        icon: const Icon(Icons.refresh),
                       ),
                     ],
-                    const SizedBox(height: 10),
-                    AnimatedSwitcher(
-                      duration: Duration(milliseconds: reduceMotion ? 0 : 320),
-                      switchInCurve: Curves.easeOutBack,
-                      switchOutCurve: Curves.easeIn,
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: ScaleTransition(
-                            scale: Tween<double>(
-                              begin: 0.98,
-                              end: 1,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: _RecommendationBadge(
-                        key: ValueKey<String>(
-                          '${aiInsight.primaryMessage}:${aiInsight.confidence.toStringAsFixed(2)}',
-                        ),
-                        statusColor: statusColor,
-                        text: '${_statusEmoji(aiInsight.recommendedLevel)} ${_beginnerActionText(aiInsight.recommendedLevel)}',
-                        reduceMotion: reduceMotion,
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton.icon(
+                      onPressed: () => _openWeeklyDashboard(weather),
+                      icon: const Icon(Icons.open_in_full),
+                      label: const Text('7-day details'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Temperature ${weather.temperatureC.toStringAsFixed(0)}°C  |  Humidity ${weather.humidityPct.toStringAsFixed(0)}%  |  Rain chance ${weather.rainProbabilityPct.toStringAsFixed(0)}%',
+                    style: TextStyle(
+                      color: palette.secondaryText,
+                      fontSize: 15,
+                    ),
+                  ),
+                  if (_soilMoisturePct != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Soil moisture ${_soilMoisturePct!.toStringAsFixed(0)}%',
+                      style: TextStyle(
+                        color: palette.secondaryText,
+                        fontSize: 16,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    _buildIrrigationGauge(
-                      needScore: aiInsight.needScore,
-                      et0Mm: aiInsight.et0Mm,
-                      confidence: aiInsight.confidence,
-                      liters: aiInsight.litersPerSquareMeter,
-                      timing: aiInsight.timingWindow,
-                      cropType: _selectedCropType,
-                      growthStage: _selectedGrowthStage,
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: palette.surface.withValues(alpha: 0.58),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: palette.border.withValues(alpha: 0.45),
+                  ],
+                  const SizedBox(height: 10),
+                  AnimatedSwitcher(
+                    duration: Duration(milliseconds: reduceMotion ? 0 : 320),
+                    switchInCurve: Curves.easeOutBack,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(
+                          scale: Tween<double>(
+                            begin: 0.98,
+                            end: 1,
+                          ).animate(animation),
+                          child: child,
                         ),
+                      );
+                    },
+                    child: _RecommendationBadge(
+                      key: ValueKey<String>(
+                        '${aiInsight.primaryMessage}:${aiInsight.confidence.toStringAsFixed(2)}',
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'What should I do?',
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                      statusColor: statusColor,
+                      text:
+                          '${_statusEmoji(aiInsight.recommendedLevel)} ${_beginnerActionText(aiInsight.recommendedLevel)}',
+                      reduceMotion: reduceMotion,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildIrrigationGauge(
+                    needScore: aiInsight.needScore,
+                    et0Mm: aiInsight.et0Mm,
+                    confidence: aiInsight.confidence,
+                    liters: aiInsight.litersPerSquareMeter,
+                    timing: aiInsight.timingWindow,
+                    cropType: _selectedCropType,
+                    growthStage: _selectedGrowthStage,
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: palette.surface.withValues(alpha: 0.58),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: palette.border.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'What should I do?',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _beginnerActionText(aiInsight.recommendedLevel),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: statusColor,
-                            ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _beginnerActionText(aiInsight.recommendedLevel),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: statusColor,
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Crop: ${_selectedCropType.label}',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 15,
-                                        color: palette.primaryText,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Stage: ${_selectedGrowthStage.label}',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: palette.secondaryText,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildConfidenceStars(aiInsight.confidence),
-                                  const SizedBox(height: 2),
                                   Text(
-                                    _confidenceLabel(aiInsight.confidence),
+                                    'Crop: ${_selectedCropType.label}',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                      color: palette.primaryText,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Stage: ${_selectedGrowthStage.label}',
+                                    style: TextStyle(
+                                      fontSize: 13,
                                       color: palette.secondaryText,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                _buildConfidenceStars(aiInsight.confidence),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _confidenceLabel(aiInsight.confidence),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: palette.secondaryText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Confidence note: ${aiInsight.confidenceReason}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: palette.secondaryText,
                           ),
-                          const SizedBox(height: 6),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'How much: ${aiInsight.litersPerSquareMeter.toStringAsFixed(1)} L per m²',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        const SizedBox(height: 2),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth:
+                                    MediaQuery.sizeOf(context).width - 110,
+                              ),
+                              child: Text(
+                                'Total for ${_fieldAreaDisplayLabel()}: ${totalLitersForField.toStringAsFixed(0)} L',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                softWrap: true,
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: _setFieldArea,
+                              icon: const Icon(Icons.straighten, size: 16),
+                              label: const Text('Edit area'),
+                            ),
+                          ],
+                        ),
+                        if (_adaptiveNeedBias.abs() > 0.005) ...[
+                          const SizedBox(height: 2),
                           Text(
-                            'Confidence note: ${aiInsight.confidenceReason}',
+                            'Adaptive tuning: ${_adaptiveNeedBias > 0 ? '+' : ''}${(_adaptiveNeedBias * 100).toStringAsFixed(1)}% based on past 24h outcomes',
                             style: TextStyle(
                               fontSize: 12,
                               color: palette.secondaryText,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'How much: ${aiInsight.litersPerSquareMeter.toStringAsFixed(1)} L per m²',
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          const SizedBox(height: 2),
-                          Wrap(
-                            spacing: 4,
-                            runSpacing: 2,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: MediaQuery.sizeOf(context).width - 110,
-                                ),
-                                child: Text(
-                                  'Total for ${_fieldAreaDisplayLabel()}: ${totalLitersForField.toStringAsFixed(0)} L',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  softWrap: true,
-                                ),
-                              ),
-                              TextButton.icon(
-                                onPressed: _setFieldArea,
-                                icon: const Icon(Icons.straighten, size: 16),
-                                label: const Text('Edit area'),
-                              ),
-                            ],
-                          ),
-                          if (_adaptiveNeedBias.abs() > 0.005) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Adaptive tuning: ${_adaptiveNeedBias > 0 ? '+' : ''}${(_adaptiveNeedBias * 100).toStringAsFixed(1)}% based on past 24h outcomes',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: palette.secondaryText,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 2),
-                          Text(
-                            'Best time: ${aiInsight.timingWindow}',
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Why this suggestion:',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          ...aiInsight.reasons.map(
-                            (reason) => Padding(
-                              padding: const EdgeInsets.only(bottom: 3),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Padding(
-                                    padding: EdgeInsets.only(top: 2),
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      size: 14,
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      reason,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: palette.secondaryText,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
                         ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      weather.fromCache
-                          ? 'Showing saved forecast (offline mode).'
-                          : 'Live data updated ${weather.updatedAt.hour.toString().padLeft(2, '0')}:${weather.updatedAt.minute.toString().padLeft(2, '0')}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: palette.secondaryText,
-                      ),
-                    ),
-                    _build3DayComparison(weather),
-                    _buildFeedbackButtons(aiInsight),
-                    _buildHistoryInsights(),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: _changeLocationManually,
-                          icon: const Icon(Icons.edit_location_alt),
-                          label: const Text('Change location'),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Best time: ${aiInsight.timingWindow}',
+                          style: const TextStyle(fontSize: 14),
                         ),
-                        OutlinedButton.icon(
-                          onPressed: _changeCropType,
-                          icon: const Icon(Icons.grass),
-                          label: const Text('Crop type'),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Why this suggestion:',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        OutlinedButton.icon(
-                          onPressed: _changeGrowthStage,
-                          icon: const Icon(Icons.eco),
-                          label: const Text('Growth stage'),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: _changeSoilType,
-                          icon: const Icon(Icons.terrain),
-                          label: const Text('Soil type'),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: _setSoilMoisture,
-                          icon: const Icon(Icons.water_drop),
-                          label: const Text('Soil moisture'),
+                        const SizedBox(height: 4),
+                        ...aiInsight.reasons.map(
+                          (reason) => Padding(
+                            padding: const EdgeInsets.only(bottom: 3),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 2),
+                                  child: Icon(
+                                    Icons.check_circle,
+                                    size: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    reason,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: palette.secondaryText,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    weather.fromCache
+                        ? 'Showing saved forecast (offline mode).'
+                        : 'Live data updated ${weather.updatedAt.hour.toString().padLeft(2, '0')}:${weather.updatedAt.minute.toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: palette.secondaryText,
+                    ),
+                  ),
+                  _build3DayComparison(weather),
+                  _buildFeedbackButtons(aiInsight),
+                  _buildHistoryInsights(),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _changeLocationManually,
+                        icon: const Icon(Icons.edit_location_alt),
+                        label: const Text('Change location'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _changeCropType,
+                        icon: const Icon(Icons.grass),
+                        label: const Text('Crop type'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _changeGrowthStage,
+                        icon: const Icon(Icons.eco),
+                        label: const Text('Growth stage'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _changeSoilType,
+                        icon: const Icon(Icons.terrain),
+                        label: const Text('Soil type'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _setSoilMoisture,
+                        icon: const Icon(Icons.water_drop),
+                        label: const Text('Soil moisture'),
+                      ),
+                    ],
+                  ),
+                ],
               );
             },
           ),
@@ -2635,10 +2702,340 @@ class z_DashboardPageState extends State<DashboardPage> {
 }
 
 class _MalaysiaLocationSelection {
-  const _MalaysiaLocationSelection({required this.state, required this.location});
+  const _MalaysiaLocationSelection({
+    required this.state,
+    required this.location,
+  });
 
   final String state;
   final String location;
+}
+
+class _GrowingTreeLogo extends StatefulWidget {
+  const _GrowingTreeLogo({required this.reduceMotion});
+
+  final bool reduceMotion;
+
+  @override
+  State<_GrowingTreeLogo> createState() => _GrowingTreeLogoState();
+}
+
+class _AnimatedFarmTitle extends StatefulWidget {
+  const _AnimatedFarmTitle({required this.reduceMotion});
+
+  final bool reduceMotion;
+
+  @override
+  State<_AnimatedFarmTitle> createState() => _AnimatedFarmTitleState();
+}
+
+class _AnimatedFarmTitleState extends State<_AnimatedFarmTitle>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    );
+    if (widget.reduceMotion) {
+      _controller.value = 1;
+    } else {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedFarmTitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.reduceMotion && _controller.isAnimating) {
+      _controller
+        ..stop()
+        ..value = 1;
+    } else if (!widget.reduceMotion && !_controller.isAnimating) {
+      _controller
+        ..value = 0
+        ..repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const baseStyle = TextStyle(
+      fontFamily: 'BreeSerif',
+      fontSize: 34,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.5,
+      color: Colors.white,
+      height: 1,
+      shadows: [
+        Shadow(color: Color(0x5B10230B), blurRadius: 8, offset: Offset(0, 2)),
+      ],
+    );
+
+    if (widget.reduceMotion) {
+      return Text('Growlytics', style: baseStyle);
+    }
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final phase = _controller.value;
+        final sway = sin(phase * pi * 2) * 1.8;
+        final shimmer = 0.5 + (0.5 * sin((phase * pi * 2) - (pi / 2)));
+        final highlightColor = Color.lerp(
+          const Color(0xFFC8F3A7),
+          const Color(0xFFF7FFE8),
+          shimmer,
+        )!;
+
+        return Transform.translate(
+          offset: Offset(0, -sway),
+          child: ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) {
+              final sweepCenter = -0.2 + (phase * 1.4);
+              return LinearGradient(
+                begin: Alignment(sweepCenter - 0.6, 0),
+                end: Alignment(sweepCenter + 0.6, 0),
+                colors: [
+                  const Color(0xFFE8FFD1),
+                  highlightColor,
+                  const Color(0xFFA8E08B),
+                ],
+                stops: const [0.15, 0.5, 0.85],
+              ).createShader(bounds);
+            },
+            child: Text('Growlytics', style: baseStyle),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _GrowingTreeLogoState extends State<_GrowingTreeLogo>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3200),
+    );
+    if (widget.reduceMotion) {
+      _controller.value = 1;
+    } else {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _GrowingTreeLogo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.reduceMotion && _controller.isAnimating) {
+      _controller
+        ..stop()
+        ..value = 1;
+    } else if (!widget.reduceMotion && !_controller.isAnimating) {
+      _controller
+        ..value = 0
+        ..repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const logoSize = 40.0;
+    if (widget.reduceMotion) {
+      return const SizedBox(
+        width: logoSize,
+        height: logoSize,
+        child: CustomPaint(
+          painter: _RealisticTreePainter(growth: 1, breezePhase: 0),
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: logoSize,
+      height: logoSize,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final phase = _controller.value;
+          final growthProgress = phase <= 0.78
+              ? Curves.easeOutCubic.transform(phase / 0.78)
+              : 1.0;
+          final sway = sin(phase * pi * 2) * 0.08;
+          return Transform.rotate(
+            angle: sway,
+            alignment: Alignment.bottomCenter,
+            child: CustomPaint(
+              painter: _RealisticTreePainter(
+                growth: growthProgress,
+                breezePhase: phase,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _RealisticTreePainter extends CustomPainter {
+  const _RealisticTreePainter({
+    required this.growth,
+    required this.breezePhase,
+  });
+
+  final double growth;
+  final double breezePhase;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final safeGrowth = growth.clamp(0.0, 1.0).toDouble();
+    final trunkTopY = size.height * (0.88 - (0.58 * safeGrowth));
+    final trunkBaseY = size.height * 0.95;
+    final centerX = size.width * 0.5;
+
+    final trunk = Path()
+      ..moveTo(centerX - (size.width * 0.05), trunkBaseY)
+      ..quadraticBezierTo(
+        centerX - (size.width * 0.11),
+        size.height * 0.75,
+        centerX - (size.width * 0.035),
+        trunkTopY,
+      )
+      ..lineTo(centerX + (size.width * 0.03), trunkTopY)
+      ..quadraticBezierTo(
+        centerX + (size.width * 0.095),
+        size.height * 0.76,
+        centerX + (size.width * 0.055),
+        trunkBaseY,
+      )
+      ..close();
+
+    canvas.drawPath(
+      trunk,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFF5B3A1E), Color(0xFF7D5632), Color(0xFF4A2E17)],
+        ).createShader(Offset.zero & size),
+    );
+
+    final branchProgress = ((safeGrowth - 0.3) / 0.7)
+        .clamp(0.0, 1.0)
+        .toDouble();
+    final breeze = sin(breezePhase * pi * 2) * 0.6;
+    final branchPaint = Paint()
+      ..color = const Color(0xFF5B3A1E)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.06
+      ..strokeCap = StrokeCap.round;
+
+    if (branchProgress > 0) {
+      final leftStart = Offset(
+        centerX - size.width * 0.01,
+        trunkTopY + size.height * 0.06,
+      );
+      final leftEnd = Offset(
+        centerX - (size.width * (0.18 * branchProgress)),
+        trunkTopY - (size.height * (0.15 * branchProgress)) + breeze,
+      );
+      canvas.drawLine(leftStart, leftEnd, branchPaint);
+
+      final rightStart = Offset(
+        centerX + size.width * 0.01,
+        trunkTopY + size.height * 0.08,
+      );
+      final rightEnd = Offset(
+        centerX + (size.width * (0.2 * branchProgress)),
+        trunkTopY - (size.height * (0.1 * branchProgress)) - breeze,
+      );
+      canvas.drawLine(rightStart, rightEnd, branchPaint);
+    }
+
+    final canopyProgress = ((safeGrowth - 0.45) / 0.55)
+        .clamp(0.0, 1.0)
+        .toDouble();
+    if (canopyProgress > 0) {
+      final leafColorDark = const Color(0xFF2E6B36);
+      final leafColorMid = const Color(0xFF3D8A45);
+      final leafColorLight = const Color(0xFF59A45F);
+      final shimmer = 0.92 + (0.08 * sin(breezePhase * pi * 2));
+
+      void drawLeafCluster(
+        Offset center,
+        double radius,
+        Color color,
+        double alpha,
+      ) {
+        canvas.drawCircle(
+          center,
+          radius * canopyProgress,
+          Paint()..color = color.withValues(alpha: alpha * shimmer),
+        );
+      }
+
+      final crownY = trunkTopY - size.height * 0.03;
+      drawLeafCluster(
+        Offset(centerX, crownY),
+        size.width * 0.23,
+        leafColorMid,
+        0.95,
+      );
+      drawLeafCluster(
+        Offset(centerX - size.width * 0.14, crownY + size.height * 0.02),
+        size.width * 0.16,
+        leafColorDark,
+        0.88,
+      );
+      drawLeafCluster(
+        Offset(centerX + size.width * 0.15, crownY + size.height * 0.03),
+        size.width * 0.16,
+        leafColorDark,
+        0.88,
+      );
+      drawLeafCluster(
+        Offset(centerX - size.width * 0.06, crownY - size.height * 0.12),
+        size.width * 0.14,
+        leafColorLight,
+        0.92,
+      );
+      drawLeafCluster(
+        Offset(centerX + size.width * 0.08, crownY - size.height * 0.11),
+        size.width * 0.13,
+        leafColorLight,
+        0.92,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RealisticTreePainter oldDelegate) {
+    return oldDelegate.growth != growth ||
+        oldDelegate.breezePhase != breezePhase;
+  }
 }
 
 enum _AreaUnit { squareMeter, acre, hectare }
@@ -2760,7 +3157,8 @@ class _ConfidenceTrendPainter extends CustomPainter {
       return;
     }
 
-    final sorted = [...records]..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final sorted = [...records]
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     final data = sorted
         .map((record) => record.confidence.clamp(0.0, 1.0).toDouble())
         .toList();
@@ -3231,7 +3629,8 @@ class _AnimatedWeatherIconState extends State<_AnimatedWeatherIcon>
   }
 
   bool get _isSunny => widget.weatherCode == 0;
-  bool get _isPartlyCloudy => widget.weatherCode == 1 || widget.weatherCode == 2;
+  bool get _isPartlyCloudy =>
+      widget.weatherCode == 1 || widget.weatherCode == 2;
   bool get _isCloudy => widget.weatherCode == 3;
   bool get _isStorm => widget.weatherCode >= 95;
 
