@@ -953,20 +953,19 @@ class z_DashboardPageState extends State<DashboardPage> {
             children: List.generate(3, (index) {
             final day = forecastList[index];
             final dayOfWeek = _weekdayShort(day.date.weekday);
-            final recommendation = _aiHydrationService.recommendationForDay(
+            final dayInsight = _aiHydrationService.analyzeForecastDay(
               day: day,
+              contextWeather: weather,
               cropType: _selectedCropType,
               growthStage: _selectedGrowthStage,
+              soilType: _selectedSoilType,
+              adaptiveNeedBias: _adaptiveNeedBias,
             );
+            final recommendation =
+                '${_beginnerActionText(dayInsight.recommendedLevel)} (${dayInsight.timingWindow})';
 
             // Determine recommendation color
-            final isSkip = day.rainProbabilityPct > 70 || (day.soilMoisturePct != null && day.soilMoisturePct! >= 70);
-            final isLight = day.humidityPct > 80;
-            final recommendationColor = isSkip
-                ? Colors.green
-                : isLight
-                    ? Colors.orange
-                    : Colors.red.shade300;
+            final recommendationColor = _statusColor(dayInsight.recommendedLevel);
             final cardBackground = Colors.white.withValues(alpha: 0.92);
             final cardBorder = recommendationColor.withValues(alpha: 0.65);
             final titleColor = Colors.black87;
@@ -2136,6 +2135,8 @@ class z_DashboardPageState extends State<DashboardPage> {
               aiHydrationService: _aiHydrationService,
               cropType: _selectedCropType,
               growthStage: _selectedGrowthStage,
+              soilType: _selectedSoilType,
+              adaptiveNeedBias: _adaptiveNeedBias,
               weatherIconForCode: _weatherIconForCode,
             ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -3349,6 +3350,8 @@ class _WeeklyForecastPage extends StatefulWidget {
     required this.aiHydrationService,
     required this.cropType,
     required this.growthStage,
+    required this.soilType,
+    required this.adaptiveNeedBias,
     required this.weatherIconForCode,
   });
 
@@ -3356,6 +3359,8 @@ class _WeeklyForecastPage extends StatefulWidget {
   final AiHydrationService aiHydrationService;
   final CropType cropType;
   final GrowthStage growthStage;
+  final SoilType soilType;
+  final double adaptiveNeedBias;
   final IconData Function(int weatherCode) weatherIconForCode;
 
   @override
@@ -3401,14 +3406,30 @@ class _WeeklyForecastPageState extends State<_WeeklyForecastPage> {
     super.dispose();
   }
 
-  Color _dayColor(DailyForecast day) {
-    if (day.rainProbabilityPct > 70) {
-      return Colors.red.shade600;
+  Color _levelColor(IrrigationLevel level) {
+    switch (level) {
+      case IrrigationLevel.skip:
+        return Colors.red.shade600;
+      case IrrigationLevel.waterLightly:
+        return Colors.amber.shade700;
+      case IrrigationLevel.waterMore:
+        return Colors.lightBlue.shade700;
+      case IrrigationLevel.waterToday:
+        return Colors.green.shade700;
     }
-    if (day.humidityPct > 80) {
-      return Colors.amber.shade700;
+  }
+
+  String _actionTextForLevel(IrrigationLevel level) {
+    switch (level) {
+      case IrrigationLevel.skip:
+        return 'Do not water today.';
+      case IrrigationLevel.waterLightly:
+        return 'Water a little today.';
+      case IrrigationLevel.waterMore:
+        return 'Water more than usual today.';
+      case IrrigationLevel.waterToday:
+        return 'Water today as normal.';
     }
-    return Colors.green.shade700;
   }
 
   bool _reduceMotion(BuildContext context) {
@@ -3442,18 +3463,29 @@ class _WeeklyForecastPageState extends State<_WeeklyForecastPage> {
           ),
           const SizedBox(height: 12),
           for (var i = 0; i < widget.weather.dailyForecast.length; i++)
-            _AnimatedForecastTile(
-              day: widget.weather.dailyForecast[i],
-              color: _dayColor(widget.weather.dailyForecast[i]),
-              recommendation: widget.aiHydrationService.recommendationForDay(
-                day: widget.weather.dailyForecast[i],
-                cropType: widget.cropType,
-                growthStage: widget.growthStage,
-              ),
-              weatherIconForCode: widget.weatherIconForCode,
-              visible: _visibleCards > i,
-              reduceMotion: reduceMotion,
-              weekday: _weekday(widget.weather.dailyForecast[i].date.weekday),
+            Builder(
+              builder: (context) {
+                final day = widget.weather.dailyForecast[i];
+                final dayInsight = widget.aiHydrationService.analyzeForecastDay(
+                  day: day,
+                  contextWeather: widget.weather,
+                  cropType: widget.cropType,
+                  growthStage: widget.growthStage,
+                  soilType: widget.soilType,
+                  adaptiveNeedBias: widget.adaptiveNeedBias,
+                );
+
+                return _AnimatedForecastTile(
+                  day: day,
+                  color: _levelColor(dayInsight.recommendedLevel),
+                  recommendation:
+                      '${_actionTextForLevel(dayInsight.recommendedLevel)} (${dayInsight.timingWindow})',
+                  weatherIconForCode: widget.weatherIconForCode,
+                  visible: _visibleCards > i,
+                  reduceMotion: reduceMotion,
+                  weekday: _weekday(day.date.weekday),
+                );
+              },
             ),
         ],
       ),

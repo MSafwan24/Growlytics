@@ -242,6 +242,39 @@ class AiHydrationService {
     return 'Normal irrigation in early morning.';
   }
 
+  AiHydrationInsight analyzeForecastDay({
+    required DailyForecast day,
+    required SmartHydrationWeather contextWeather,
+    CropType cropType = CropType.generic,
+    GrowthStage growthStage = GrowthStage.vegetative,
+    dynamic soilType,
+    double adaptiveNeedBias = 0,
+  }) {
+    final modeledWeather = SmartHydrationWeather(
+      temperatureC: day.avgTempC,
+      humidityPct: day.humidityPct,
+      windSpeedKph: day.windSpeedKph,
+      weatherCode: day.weatherCode,
+      rainProbabilityPct: day.rainProbabilityPct,
+      precipitationMm: contextWeather.precipitationMm,
+      locationName: contextWeather.locationName,
+      latitude: contextWeather.latitude,
+      longitude: contextWeather.longitude,
+      dailyForecast: contextWeather.dailyForecast,
+      updatedAt: contextWeather.updatedAt,
+      fromCache: contextWeather.fromCache,
+      soilMoisturePct: day.soilMoisturePct ?? contextWeather.soilMoisturePct,
+    );
+
+    return analyzeCurrent(
+      weather: modeledWeather,
+      cropType: cropType,
+      growthStage: growthStage,
+      soilType: soilType,
+      adaptiveNeedBias: adaptiveNeedBias,
+    );
+  }
+
   String _primaryMessage(IrrigationLevel level) {
     switch (level) {
       case IrrigationLevel.skip:
