@@ -605,10 +605,21 @@ class _DashboardPageState extends State<DashboardPage> {
                 : isLight
                     ? Colors.orange
                     : Colors.red.shade300;
+            final cardBackground = Colors.white.withValues(alpha: 0.92);
+            final cardBorder = recommendationColor.withValues(alpha: 0.65);
+            final titleColor = Colors.black87;
+            final bodyColor = Colors.black87;
+            final recommendationTextColor = recommendationColor.withValues(alpha: 0.95);
 
             return Expanded(
               child: Card(
-                color: recommendationColor.withValues(alpha: 0.15),
+                color: cardBackground,
+                elevation: 2,
+                shadowColor: Colors.black.withValues(alpha: 0.16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: cardBorder, width: 1.2),
+                ),
                 margin: EdgeInsets.only(right: index == 2 ? 0 : 8),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -620,26 +631,26 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
-                          color: Colors.black87,
+                          color: titleColor,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${day.maxTempC.toStringAsFixed(0)}°C / ${day.minTempC.toStringAsFixed(0)}°C',
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        style: TextStyle(fontSize: 11, color: bodyColor.withValues(alpha: 0.75)),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Rain: ${day.rainProbabilityPct.toStringAsFixed(0)}%',
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        style: TextStyle(fontSize: 11, color: bodyColor.withValues(alpha: 0.75)),
                       ),
                       const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
-                          color: recommendationColor.withValues(alpha: 0.18),
+                          color: recommendationColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: recommendationColor.withValues(alpha: 0.35),
+                            color: cardBorder,
                           ),
                         ),
                         padding: const EdgeInsets.all(4),
@@ -647,7 +658,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           recommendation,
                           style: TextStyle(
                             fontSize: 10,
-                            color: recommendationColor.withValues(alpha: 0.95),
+                            color: recommendationTextColor,
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 2,
@@ -1404,7 +1415,20 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 Positioned.fill(
-                  child: Container(color: Colors.black.withValues(alpha: 0.10)),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: _appBackgroundTintForVisual(visual),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: Container(
+                    color: _appBackgroundWashForVisual(visual),
+                  ),
                 ),
                 Positioned.fill(
                   child: SingleChildScrollView(
@@ -1497,6 +1521,12 @@ class _DashboardPageState extends State<DashboardPage> {
     if (weather.windSpeedKph >= 22) {
       return _WeatherVisual.windy;
     }
+    if (weather.weatherCode == 1 || weather.weatherCode == 2) {
+      return _WeatherVisual.partlyCloudy;
+    }
+    if (weather.weatherCode == 3) {
+      return _WeatherVisual.cloudy;
+    }
     if (weather.weatherCode == 0 || weather.temperatureC >= 32) {
       return _WeatherVisual.sunny;
     }
@@ -1523,14 +1553,23 @@ class _DashboardPageState extends State<DashboardPage> {
           secondaryText: Color(0xFF835F09),
           shadow: Color(0xFFC08C21),
         );
+      case _WeatherVisual.partlyCloudy:
+        return const _WidgetPalette(
+          backgroundGradient: [Color(0xFFE8EEF6), Color(0xFFD8E1EB)],
+          surface: Color(0xFFF2F6FB),
+          border: Color(0xFF7C90A5),
+          primaryText: Color(0xFF24364A),
+          secondaryText: Color(0xFF4C6175),
+          shadow: Color(0xFF6E8499),
+        );
       case _WeatherVisual.cloudy:
         return const _WidgetPalette(
-          backgroundGradient: [Color(0xFFF1F5FA), Color(0xFFE4EBF4)],
-          surface: Color(0xFFF6FAFF),
-          border: Color(0xFF9AAEC6),
-          primaryText: Color(0xFF2D4159),
-          secondaryText: Color(0xFF526983),
-          shadow: Color(0xFF8EA5BE),
+          backgroundGradient: [Color(0xFFDDE4ED), Color(0xFFC8D2DD)],
+          surface: Color(0xFFEAF0F6),
+          border: Color(0xFF667A8D),
+          primaryText: Color(0xFF1E2E3F),
+          secondaryText: Color(0xFF425365),
+          shadow: Color(0xFF5D7184),
         );
       case _WeatherVisual.windy:
         return const _WidgetPalette(
@@ -1550,6 +1589,58 @@ class _DashboardPageState extends State<DashboardPage> {
           secondaryText: Color(0xFF495390),
           shadow: Color(0xFF6170AD),
         );
+    }
+  }
+
+  List<Color> _appBackgroundTintForVisual(_WeatherVisual visual) {
+    switch (visual) {
+      case _WeatherVisual.sunny:
+        return [
+          const Color(0x33FFF2B8),
+          const Color(0x22FFD36E),
+        ];
+      case _WeatherVisual.rainy:
+        return [
+          const Color(0x334A79B6),
+          const Color(0x221E3C63),
+        ];
+      case _WeatherVisual.cloudy:
+        return [
+          const Color(0x44798996),
+          const Color(0x335A6878),
+        ];
+      case _WeatherVisual.partlyCloudy:
+        return [
+          const Color(0x446E7E8E),
+          const Color(0x335D6A79),
+        ];
+      case _WeatherVisual.windy:
+        return [
+          const Color(0x3349A98F),
+          const Color(0x2245A085),
+        ];
+      case _WeatherVisual.night:
+        return [
+          const Color(0x442B3768),
+          const Color(0x66111A33),
+        ];
+    }
+  }
+
+  Color _appBackgroundWashForVisual(_WeatherVisual visual) {
+    switch (visual) {
+      case _WeatherVisual.sunny:
+        return const Color(0x14FFF8D9);
+      case _WeatherVisual.rainy:
+        return const Color(0x1A0F2740);
+      case _WeatherVisual.cloudy:
+        return const Color(0x2630404F);
+      case _WeatherVisual.partlyCloudy:
+        return const Color(0x22354454);
+      case _WeatherVisual.windy:
+        return const Color(0x120E5B4C);
+      case _WeatherVisual.night:
+        return const Color(0x33111224);
     }
   }
 
@@ -1740,10 +1831,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 growthStage: _selectedGrowthStage,
               );
               final statusColor = _statusColor(aiInsight.recommendedLevel);
-              return InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => _openWeeklyDashboard(weather),
-                child: Column(
+              return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -1784,6 +1872,15 @@ class _DashboardPageState extends State<DashboardPage> {
                           icon: const Icon(Icons.refresh),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FilledButton.icon(
+                        onPressed: () => _openWeeklyDashboard(weather),
+                        icon: const Icon(Icons.open_in_full),
+                        label: const Text('7-day details'),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -1998,15 +2095,9 @@ class _DashboardPageState extends State<DashboardPage> {
                           icon: const Icon(Icons.water_drop),
                           label: const Text('Soil moisture'),
                         ),
-                        FilledButton.icon(
-                          onPressed: () => _openWeeklyDashboard(weather),
-                          icon: const Icon(Icons.open_in_full),
-                          label: const Text('7-day details'),
-                        ),
                       ],
                     ),
                   ],
-                ),
               );
             },
           ),
@@ -2359,7 +2450,7 @@ class _RecommendationBadgeState extends State<_RecommendationBadge>
   }
 }
 
-enum _WeatherVisual { rainy, sunny, cloudy, windy, night }
+enum _WeatherVisual { rainy, sunny, partlyCloudy, cloudy, windy, night }
 
 class _AnimatedWeatherBackdrop extends StatefulWidget {
   const _AnimatedWeatherBackdrop({
@@ -2451,6 +2542,9 @@ class _WeatherPainter extends CustomPainter {
       case _WeatherVisual.sunny:
         _drawSun(canvas, size);
         _drawHeatParticles(canvas, size);
+      case _WeatherVisual.partlyCloudy:
+        _drawSun(canvas, size);
+        _drawCloudLayers(canvas, size, Colors.white.withValues(alpha: 0.22));
       case _WeatherVisual.cloudy:
         _drawCloudLayers(canvas, size, Colors.white.withValues(alpha: 0.25));
       case _WeatherVisual.windy:
@@ -2476,11 +2570,17 @@ class _WeatherPainter extends CustomPainter {
           end: Alignment.bottomRight,
           colors: [Color(0xFFF6B73C), Color(0xFFF9D976), Color(0xFFFFF3C7)],
         );
+      case _WeatherVisual.partlyCloudy:
+        return const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFCBD6E1), Color(0xFF94A4B5)],
+        );
       case _WeatherVisual.cloudy:
         return const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF97A9B8), Color(0xFF6E7F90)],
+          colors: [Color(0xFF7D8C9B), Color(0xFF5D6D7D)],
         );
       case _WeatherVisual.windy:
         return const LinearGradient(
@@ -2664,7 +2764,8 @@ class _AnimatedWeatherIconState extends State<_AnimatedWeatherIcon>
   }
 
   bool get _isSunny => widget.weatherCode == 0;
-  bool get _isCloudy => widget.weatherCode >= 1 && widget.weatherCode <= 3;
+  bool get _isPartlyCloudy => widget.weatherCode == 1 || widget.weatherCode == 2;
+  bool get _isCloudy => widget.weatherCode == 3;
   bool get _isStorm => widget.weatherCode >= 95;
 
   @override
@@ -2709,6 +2810,16 @@ class _AnimatedWeatherIconState extends State<_AnimatedWeatherIcon>
                       ),
                     ),
                   ),
+                if (_isPartlyCloudy)
+                  Positioned(
+                    top: -3,
+                    right: -3,
+                    child: Icon(
+                      Icons.wb_sunny,
+                      color: baseColor.withValues(alpha: 0.5),
+                      size: 14,
+                    ),
+                  ),
                 if (_isCloudy)
                   Positioned(
                     right: -4,
@@ -2732,6 +2843,9 @@ class _AnimatedWeatherIconState extends State<_AnimatedWeatherIcon>
     }
     if (_isRainy) {
       return Icons.grain;
+    }
+    if (_isPartlyCloudy) {
+      return Icons.wb_cloudy;
     }
     if (_isStorm) {
       return Icons.thunderstorm;
