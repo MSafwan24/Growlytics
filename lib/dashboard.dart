@@ -948,11 +948,7 @@ class z_DashboardPageState extends State<DashboardPage> {
         Row(
           children: List.generate(3, (index) {
             final day = forecastList[index];
-            final dayOfWeek = DateTime.now()
-                .add(Duration(days: forecastList.indexOf(day)))
-                .toLocal()
-                .toString()
-                .split(' ')[0];
+            final dayOfWeek = _weekdayShort(day.date.weekday);
             final recommendation = _aiHydrationService.recommendationForDay(
               day: day,
               cropType: _selectedCropType,
@@ -1167,6 +1163,11 @@ class z_DashboardPageState extends State<DashboardPage> {
         ),
       ],
     );
+  }
+
+  String _weekdayShort(int weekday) {
+    const names = <String>['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return names[(weekday - 1).clamp(0, 6)];
   }
 
   Future<void> _recordFeedback(AiHydrationInsight aiInsight, bool followed) async {
@@ -2240,7 +2241,7 @@ class z_DashboardPageState extends State<DashboardPage> {
                                 ),
                               ),
                               Text(
-                                '${weather.temperatureC.toStringAsFixed(1)}C - ${weather.conditionLabel}',
+                                '${weather.temperatureC.toStringAsFixed(1)}°C - ${weather.conditionLabel}',
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
@@ -3462,7 +3463,7 @@ class _AnimatedForecastTile extends StatelessWidget {
                 ),
               ),
               subtitle: Text(
-                '${day.minTempC.toStringAsFixed(0)} - ${day.maxTempC.toStringAsFixed(0)}C - Rain ${day.rainProbabilityPct.toStringAsFixed(0)}%',
+                '${day.minTempC.toStringAsFixed(0)}°C - ${day.maxTempC.toStringAsFixed(0)}°C - Rain ${day.rainProbabilityPct.toStringAsFixed(0)}%',
                 style: const TextStyle(fontSize: 15),
               ),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -3481,7 +3482,7 @@ class _AnimatedForecastTile extends StatelessWidget {
                     ),
                     _metricChip(
                       'Max temp',
-                      '${day.maxTempC.toStringAsFixed(1)}C',
+                      '${day.maxTempC.toStringAsFixed(1)}°C',
                     ),
                   ],
                 ),
