@@ -1,196 +1,262 @@
 import 'package:flutter/material.dart';
+import 'plant_data.dart'; // Importing our new blueprint and mock database
 
-class EcoPrescriptionPage extends StatelessWidget{
+class EcoPrescriptionPage extends StatefulWidget {
   const EcoPrescriptionPage({super.key});
 
   @override
-  Widget build(BuildContext context){
+  State<EcoPrescriptionPage> createState() => _EcoPrescriptionPageState();
+}
+
+class _EcoPrescriptionPageState extends State<EcoPrescriptionPage> {
+  // 1. Set the initial plant to the first one in our mock database (Tomato)
+  late PlantPrescription selectedPlant;
+
+  // 2. Track which steps are completed dynamically
+  Set<String> completedSteps = {};
+
+  @override
+  void initState() {
+    super.initState();
+    selectedPlant = mockDatabase[0]; // Defaults to Tomato on load
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:const Color(0xFFF1F8E9),
+      backgroundColor: const Color(0xFFF1F8E9),
       appBar: AppBar(
-        title: const Text("Plant Doctor Library", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: DropdownButtonHideUnderline(
+          child: DropdownButton<PlantPrescription>(
+            // This single line gives the popup menu the curved edges!
+            borderRadius: BorderRadius.circular(20), 
+            
+            value: selectedPlant,
+            icon: const Icon(Icons.arrow_drop_down, color: Colors.green, size: 30),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black87),
+            alignment: Alignment.center,
+            items: mockDatabase.map((PlantPrescription plant) {
+              return DropdownMenuItem<PlantPrescription>(
+                value: plant,
+                child: Text("${plant.plantName} Prescription"),
+              );
+            }).toList(),
+            onChanged: (PlantPrescription? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  selectedPlant = newValue;
+                  completedSteps.clear(); 
+                });
+              }
+            },
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
       ),
       
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${selectedPlant.plantName} treatment plan saved!'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        },
+        backgroundColor: Colors.green.shade700,
+        icon: const Icon(Icons.save, color: Colors.white),
+        label: const Text("Save Progress", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+
       body: ListView(
         padding: const EdgeInsets.all(20.0),
+        physics: const BouncingScrollPhysics(),
         children: [
-          const Text("Recent Diagnose", 
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
+          const Text(
+            "Current Soil Profile",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+          ),
           const SizedBox(height: 16),
 
-          //sample card1 and 2
-          _buildDiagnosisSummaryCard(
-            context,
-            "Tomato",
-            "Early Blight",
-            Colors.orange,
-            "Fungal infection detected on lower stems",
-            ["Prune infected lower leaves", "Apply Copper based fungicide", "Avoid overhead watering"]
-          ),
+          // 4. Passes the dynamic plant data into the soil card
+          _buildSoilHealthCard(),
 
-          _buildDiagnosisSummaryCard(
-            context,
-            "Watermelon",
-            "Healthy",
-            Colors.green,
-            "No active diseases found. Growth is optimal",
-            ["maintain current watering", "Cheeck for pests weekly"]
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Tailored Nutrient Plan",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+              ),
+              // Dynamic counter based on the plant's total steps
+              Text(
+                "${completedSteps.length}/${selectedPlant.actionSteps.length} Done",
+                style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold),
+              )
+            ],
           ),
+          const SizedBox(height: 16),
+
+          // 5. Dynamically generates the action steps using .map()
+          ...selectedPlant.actionSteps.map((step) {
+            bool isCompleted = completedSteps.contains(step.stepNumber);
+            return _buildInteractiveStepCard(
+              step.stepNumber,
+              step.title,
+              step.description,
+              isCompleted,
+              (newValue) {
+                setState(() {
+                  if (newValue == true) {
+                    completedSteps.add(step.stepNumber);
+                  } else {
+                    completedSteps.remove(step.stepNumber);
+                  }
+                });
+              },
+            );
+          }),
+
+          const SizedBox(height: 24),
+          const Text(
+            "Eco-Countermeasures",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+          ),
+          const SizedBox(height: 16),
+
+          // 6. Dynamically generates the eco tips
+          ...selectedPlant.ecoTips.map((tip) {
+            return _buildExpandableTipCard(tip.title, tip.description, tip.icon);
+          }),
+          
+          const SizedBox(height: 80),
         ],
       ),
     );
   }
 
-  //summary card part
-  Widget _buildDiagnosisSummaryCard(
-    BuildContext context, String plant, String disease, Color color, String diagnosisText, List<String> steps){
-    
+  // --- WIDGET BUILDERS ---
+
+  Widget _buildSoilHealthCard() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(backgroundColor: color.withValues(alpha: 0.1), child: Icon(Icons.spa, color: color)),
-        title: Text(plant, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(disease),
-        trailing: IconButton(
-          icon: const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.green),
-          onPressed: () => _showPopup(context, plant, disease, color, diagnosisText, steps),
-        ),
-      ),
-    );
-  }
-
-  //Popup on screen
-  void _showPopup(BuildContext context, String plant, String disease, Color color, String diagnosisText, List<String> steps){
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context){
-
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.85,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF1F8E9),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-          ),
-
-          child: Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
-              //top header banner for the diagnosis
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children:[
-                    Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white30, borderRadius: BorderRadius.circular(10)))),
-                    const SizedBox(height:16),
-                    Text(plant.toUpperCase(), style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                    Text(disease, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text("Diagnosis: $diagnosisText", style: const TextStyle(color: Colors.white, fontSize: 14)),
-                  ],
-                ),
-              ),
-
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(24),
-                  children: [
-                    const Text("How to Cure", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold )),
-                    const SizedBox(height: 16),
-
-                    //generate card
-                    for (int i = 0; i < steps.length; i++)
-                    _buildStepCard((i+1).toString(), steps[i]),
-
-                    const SizedBox(height: 24),
-                    const Text("Recovery Needs", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    _buildRecoveryStat("Soil pH", "6.2 (Slightly Acidic)", Icons.science),
-                    _buildRecoveryStat("Calcium", "Low (Needs boost)", Icons.water_drop),
-
-                    const SizedBox(height: 30),
-                    // box area for tips
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.blue.shade200)),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.info, color:Colors.blue),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text("Tip: Ensure 2-3 feet spacing for airflow.", style: TextStyle(color: Colors.blue.shade900, fontSize: 13))),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              //clsoe button for popup
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-                    child: const Text("CLOSE REPORT", style: TextStyle(color:Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              )
+              const Text("Soil pH", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              // Pulls pH from selected plant
+              Text(selectedPlant.currentPh.toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.orange.shade700)),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStepCard(String number, String instruction){
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: const[BoxShadow(color: Colors.black12, blurRadius: 2)]),
-      child: Row(
-        children: [
-          CircleAvatar(radius: 14, backgroundColor: Colors.green.shade400, child: Text(number, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))),
-          const SizedBox(width: 16),
-          Expanded(child: Text(instruction, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+          // Pulls status from selected plant
+          Text(selectedPlant.phStatus, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          const Divider(height: 30),
+          
+          const Text("NPK Levels", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 12),
+          // Pulls NPK levels from selected plant
+          _buildNutrientBar("Nitrogen (N)", selectedPlant.nitrogenLevel, Colors.blue),
+          _buildNutrientBar("Phosphorus (P)", selectedPlant.phosphorusLevel, Colors.purple),
+          _buildNutrientBar("Potassium (K)", selectedPlant.potassiumLevel, Colors.orange),
         ],
       ),
     );
   }
 
-    Widget _buildRecoveryStat(String label, String value, IconData icon){
-      
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 8.0),
-        child: Row(
+  Widget _buildNutrientBar(String label, double level, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: level,
+              minHeight: 8,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInteractiveStepCard(String stepNumber, String title, String description, bool isCompleted, ValueChanged<bool?> onChanged) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isCompleted ? Colors.green.shade50 : Colors.white, 
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: isCompleted ? Colors.green : Colors.green.shade200),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2)],
+      ),
+      child: CheckboxListTile(
+        value: isCompleted,
+        onChanged: onChanged,
+        activeColor: Colors.green.shade700,
+        checkColor: Colors.white,
+        title: Text(
+          title, 
+          style: TextStyle(
+            fontWeight: FontWeight.bold, 
+            fontSize: 16,
+            decoration: isCompleted ? TextDecoration.lineThrough : null, 
+            color: isCompleted ? Colors.grey : Colors.black,
+          )
+        ),
+        subtitle: Text(
+          description, 
+          style: TextStyle(
+            color: isCompleted ? Colors.grey : Colors.grey.shade700, 
+            fontSize: 14
+          )
+        ),
+        secondary: CircleAvatar(
+          radius: 16,
+          backgroundColor: isCompleted ? Colors.grey : Colors.green.shade600,
+          child: Text(stepNumber, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpandableTipCard(String title, String details, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent), 
+        child: ExpansionTile(
+          leading: Icon(icon, color: Colors.blue.shade600, size: 28),
+          title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade900)),
+          iconColor: Colors.blue.shade700,
+          collapsedIconColor: Colors.blue.shade700,
+          childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
           children: [
-            Icon(icon, color: Colors.green.shade700, size: 20),
-            const SizedBox(width: 12),
-            Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(value, style: const TextStyle(color: Colors.black54)),
+            Text(details, style: TextStyle(color: Colors.blue.shade800, fontSize: 14, height: 1.4)),
           ],
         ),
-      );
-    }
-  
+      ),
+    );
+  }
 }
