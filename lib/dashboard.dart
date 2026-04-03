@@ -39,6 +39,7 @@ class z_DashboardPageState extends State<DashboardPage> {
   double _fieldAreaM2 = 100;
   _AreaUnit _fieldAreaUnit = _AreaUnit.squareMeter;
   bool _weatherCardHovered = false;
+  bool _showGaugeTermGuide = true;
   bool _isSavingFeedback = false;
   bool _isSavingOutcome = false;
   bool? _lastFeedbackFollowed;
@@ -783,35 +784,71 @@ class z_DashboardPageState extends State<DashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Simple term guide',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    setState(() {
+                      _showGaugeTermGuide = !_showGaugeTermGuide;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Simple term guide',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        Icon(
+                          _showGaugeTermGuide
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          size: 18,
+                          color: Colors.black54,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 6),
-                _buildGaugeTermExplanation(
-                  term: 'Need score',
-                  meaning:
-                      'How urgent watering is today. Higher percent means more urgent.',
-                ),
-                _buildGaugeTermExplanation(
-                  term: 'ET0',
-                  meaning:
-                      'Estimated daily water loss from soil and leaves due to weather. Higher means plants dry faster.',
-                ),
-                _buildGaugeTermExplanation(
-                  term: 'Confidence',
-                  meaning:
-                      'How sure the AI is about this recommendation from current weather patterns.',
-                ),
-                _buildGaugeTermExplanation(
-                  term: 'Water (L/m²)',
-                  meaning:
-                      'Liters to apply for each 1 square meter of field area.',
-                ),
-                _buildGaugeTermExplanation(
-                  term: 'Timing',
-                  meaning:
-                      'Best watering window to reduce heat stress and evaporation losses.',
+                AnimatedCrossFade(
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 6),
+                      _buildGaugeTermExplanation(
+                        term: 'Need score',
+                        meaning:
+                            'How urgent watering is today. Higher percent means more urgent.',
+                      ),
+                      _buildGaugeTermExplanation(
+                        term: 'ET0',
+                        meaning:
+                            'Estimated daily water loss from soil and leaves due to weather. Higher means plants dry faster.',
+                      ),
+                      _buildGaugeTermExplanation(
+                        term: 'Confidence',
+                        meaning:
+                            'How sure the AI is about this recommendation from current weather patterns.',
+                      ),
+                      _buildGaugeTermExplanation(
+                        term: 'Water (L/m²)',
+                        meaning:
+                            'Liters to apply for each 1 square meter of field area.',
+                      ),
+                      _buildGaugeTermExplanation(
+                        term: 'Timing',
+                        meaning:
+                            'Best watering window to reduce heat stress and evaporation losses.',
+                      ),
+                    ],
+                  ),
+                  crossFadeState: _showGaugeTermGuide
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                  duration: const Duration(milliseconds: 180),
                 ),
               ],
             ),
