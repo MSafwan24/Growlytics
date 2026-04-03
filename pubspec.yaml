@@ -69,6 +69,12 @@ flutter:
   assets:
     - assets/model.tflite
     - assets/labels.txt
+    - assets/fonts/BreeSerif-Regular.ttf
+
+  fonts:
+    - family: BreeSerif
+      fonts:
+        - asset: assets/fonts/BreeSerif-Regular.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:
