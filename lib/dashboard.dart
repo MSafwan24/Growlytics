@@ -16,7 +16,7 @@ class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  State<DashboardPage> createState() => z_DashboardPageState();
 }
 
 class z_DashboardPageState extends State<DashboardPage> {
@@ -2040,6 +2040,8 @@ class z_DashboardPageState extends State<DashboardPage> {
                 growthStage: _selectedGrowthStage,
                 adaptiveNeedBias: _adaptiveNeedBias,
               );
+              final totalLitersForField =
+                  aiInsight.litersPerSquareMeter * _fieldAreaM2;
               final statusColor = _statusColor(aiInsight.recommendedLevel);
               return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2219,6 +2221,26 @@ class z_DashboardPageState extends State<DashboardPage> {
                           Text(
                             'How much: ${aiInsight.litersPerSquareMeter.toStringAsFixed(1)} L per m²',
                             style: const TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Total for ${_fieldAreaDisplayLabel()}: ${totalLitersForField.toStringAsFixed(0)} L',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: _setFieldArea,
+                                icon: const Icon(Icons.straighten, size: 16),
+                                label: const Text('Edit area'),
+                              ),
+                            ],
                           ),
                           if (_adaptiveNeedBias.abs() > 0.005) ...[
                             const SizedBox(height: 2),
