@@ -83,6 +83,7 @@ class AiHydrationService {
     CropType cropType = CropType.generic,
     GrowthStage growthStage = GrowthStage.vegetative,
     dynamic soilType, // SoilType from models/hydration_record.dart
+    double adaptiveNeedBias = 0,
   }) {
     // Apply soil type adjustments if provided.
     // Dynamic typing keeps this service decoupled from model imports.
@@ -130,7 +131,7 @@ class AiHydrationService {
     // Sandy soil tends to require more frequent irrigation than clay.
     needScore *= (1.0 / (soilWaterHoldingFactor + 0.2));
 
-    needScore = _clamp01(needScore);
+    needScore = _clamp01(needScore + adaptiveNeedBias);
 
     final level = _resolveLevel(
       score: needScore,
