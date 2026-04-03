@@ -64,6 +64,7 @@ class AiHydrationInsight {
     required this.reasons,
     required this.primaryMessage,
     required this.growthStage,
+    required this.confidenceReason,
   });
 
   final IrrigationLevel recommendedLevel;
@@ -75,6 +76,7 @@ class AiHydrationInsight {
   final List<String> reasons;
   final String primaryMessage;
   final GrowthStage growthStage;
+  final String confidenceReason;
 }
 
 class AiHydrationService {
@@ -141,7 +143,7 @@ class AiHydrationService {
       soilMoisturePct: weather.soilMoisturePct,
     );
 
-    final confidence = _confidenceFor(weather: weather, score: needScore);
+    final confidenceResult = _confidenceFor(weather: weather, score: needScore);
     final litersPerSquareMeter =
         _litersFor(score: needScore, cropType: cropType, etcMm: etcMm);
 
@@ -149,12 +151,13 @@ class AiHydrationService {
       recommendedLevel: level,
       needScore: needScore,
       et0Mm: et0Mm,
-      confidence: confidence,
+      confidence: confidenceResult.score,
       litersPerSquareMeter: litersPerSquareMeter,
       timingWindow: _timingWindow(weather),
       reasons: _reasoning(weather, et0Mm: et0Mm, growthStage: growthStage),
       primaryMessage: _primaryMessage(level),
       growthStage: growthStage,
+      confidenceReason: confidenceResult.reason,
     );
   }
 
@@ -332,7 +335,7 @@ class AiHydrationService {
   }
 
 
-  double _confidenceFor({
+  _ConfidenceResult _confidenceFor({
     required SmartHydrationWeather weather,
     required double score,
   }) {
@@ -346,8 +349,55 @@ class AiHydrationService {
                   .map((d) => d.rainProbabilityPct)
                   .reduce(min);
     final stability = 1 - _clamp01(forecastSpread / 100);
-    final confidence = 0.50 + (decisiveness * 0.8) + (stability * 0.18);
-    return confidence.clamp(0.45, 0.98);
+    final hasSoilMoisture = weather.soilMoisturePct != null;
+    final hasEnoughForecast = weather.dailyForecast.length >= 3;
+
+    var confidence = 0.50 + (decisiveness * 0.8) + (stability * 0.18);
+
+    if (!hasSoilMoisture) {
+      confidence -= 0.10;
+    }
+    if (weather.fromCache) {
+      confidence -= 0.08;
+    }
+    if (!hasEnoughForecast) {
+      confidence -= 0.06;
+    }
+
+    final bounded = confidence.clamp(0.35, 0.98).toDouble();
+    final reason = _confidenceReason(
+      score: bounded,
+      fromCache: weather.fromCache,
+      hasSoilMoisture: hasSoilMoisture,
+      hasEnoughForecast: hasEnoughForecast,
+      stability: stability,
+    );
+    return _ConfidenceResult(score: bounded, reason: reason);
+  }
+
+  String _confidenceReason({
+    required double score,
+    required bool fromCache,
+    required bool hasSoilMoisture,
+    required bool hasEnoughForecast,
+    required double stability,
+  }) {
+    if (score >= 0.8) {
+      return 'Reliable weather pattern and clear watering signal.';
+    }
+    if (fromCache) {
+      return 'Using cached weather data, so confidence is slightly reduced.';
+    }
+    if (!hasSoilMoisture) {
+      return 'No soil moisture input; add it to improve recommendation confidence.';
+    }
+    if (!hasEnoughForecast) {
+      return 'Limited forecast depth is available for stability checking.';
+    }
+    if (stability < 0.45) {
+      return 'Forecast varies a lot across days, reducing certainty.';
+    }
+    return 'Moderate certainty based on current weather and trend signals.';
   }
 
   IrrigationLevel _resolveLevel({
@@ -405,4 +455,11 @@ class AiHydrationService {
   }
 
   double _clamp01(double value) => value.clamp(0.0, 1.0);
+}
+
+class _ConfidenceResult {
+  _ConfidenceResult({required this.score, required this.reason});
+
+  final double score;
+  final String reason;
 }

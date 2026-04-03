@@ -2390,22 +2390,36 @@ class z_DashboardPageState extends State<DashboardPage> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Confidence note: ${aiInsight.confidenceReason}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: palette.secondaryText,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           Text(
                             'How much: ${aiInsight.litersPerSquareMeter.toStringAsFixed(1)} L per m²',
                             style: const TextStyle(fontSize: 14),
                           ),
                           const SizedBox(height: 2),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Wrap(
+                            spacing: 4,
+                            runSpacing: 2,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              Expanded(
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.sizeOf(context).width - 110,
+                                ),
                                 child: Text(
                                   'Total for ${_fieldAreaDisplayLabel()}: ${totalLitersForField.toStringAsFixed(0)} L',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                   ),
+                                  softWrap: true,
                                 ),
                               ),
                               TextButton.icon(
