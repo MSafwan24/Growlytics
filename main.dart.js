@@ -92226,7 +92226,7 @@ A.CF.prototype={
 z4(){var s=0,r=A.I(t.H)
 var $async$z4=A.J(function(a,b){if(a===1)return A.F(b,r)
 for(;;)switch(s){case 0:s=2
-return A.v(A.axk(A.eM("https://msafwan24.github.io/Growlytics/webscanner.html",0,null),B.qe),$async$z4)
+return A.v(A.axk(A.eM("https://bloom-watcher-tech.lovable.app/scanner",0,null),B.qe),$async$z4)
 case 2:if(!b)A.axt().$1("Could not launch web scanner")
 return A.G(null,r)}})
 return A.H($async$z4,r)},
