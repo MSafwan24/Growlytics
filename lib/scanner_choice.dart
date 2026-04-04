@@ -6,7 +6,7 @@ class ScannerChoicePage extends StatelessWidget {
   const ScannerChoicePage({super.key});
 
   Future<void> _launchWebScanner() async {
-    final Uri url = Uri.parse('https://msafwan24.github.io/Growlytics/webscanner.html');
+    final Uri url = Uri.parse('https://bloom-watcher-tech.lovable.app/scanner');
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       debugPrint('Could not launch web scanner');
     }
