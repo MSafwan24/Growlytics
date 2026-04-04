@@ -11,6 +11,7 @@ import 'package:growlytics/services/weather_service.dart';
 import 'package:growlytics/models/hydration_record.dart';
 import 'package:growlytics/services/hydration_history_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:growlytics/scanner_choice.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
